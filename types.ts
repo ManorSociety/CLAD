@@ -24,69 +24,205 @@ export interface User {
   studioName?: string;
   tier: SubscriptionTier;
   billingCycle?: BillingCycle;
-  isProjectPass?: boolean;
-  projectPassExpiry?: number;
-  projectPassRendersUsed?: number;
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
+  trialEndsAt?: number;
+  trialRendersUsed?: number;
 }
 
 export enum SubscriptionTier {
-  GUEST = 'GUEST',
+  FREE_TRIAL = 'FREE_TRIAL',
   STANDARD = 'STANDARD',
   PRO = 'PRO',
-  ENTERPRISE = 'ENTERPRISE',
-  PROJECT_PASS = 'PROJECT_PASS'
+  ENTERPRISE = 'ENTERPRISE'
 }
 
-export const TIER_DETAILS = {
-  [SubscriptionTier.GUEST]: {
-    name: 'Guest Access',
+export interface TierFeatures {
+  name: string;
+  priceMonthly: string;
+  priceAnnual: string;
+  priceAnnualTotal: string;
+  renders: number;
+  cineRenderVideos: number;
+  hasInterior: boolean;
+  hasCompareSlider: boolean;
+  hasColorChip: boolean;
+  hasShareToSocial: boolean;
+  hasProjectFolders: boolean;
+  hasRenderHistory: boolean;
+  hasDownloadZip: boolean;
+  shareLinksWatermarked: boolean;
+  hasPdfExport: boolean;
+  hasGifExport: boolean;
+  hasSocialTemplates: boolean;
+  hasEmailToClient: boolean;
+  hasStylePresets: boolean;
+  hasMaterialTakeoff: boolean;
+  batchUploadLimit: number;
+  teamSeats: number;
+  hasWhiteLabel: boolean;
+  hasCustomWatermark: boolean;
+  hasPriorityQueue: boolean;
+  hasDedicatedSupport: boolean;
+  features: string[];
+  styles: string[];
+  environments: string[];
+}
+
+export const TIER_DETAILS: Record<SubscriptionTier, TierFeatures> = {
+  [SubscriptionTier.FREE_TRIAL]: {
+    name: 'Free Trial',
     priceMonthly: '$0',
     priceAnnual: '$0',
     priceAnnualTotal: '$0',
-    renders: 5,
-    features: ['5 free renders', 'Exterior only', 'Standard styles']
+    renders: 3,
+    cineRenderVideos: 0,
+    hasInterior: false,
+    hasCompareSlider: false,
+    hasColorChip: false,
+    hasShareToSocial: false,
+    hasProjectFolders: false,
+    hasRenderHistory: true,
+    hasDownloadZip: false,
+    shareLinksWatermarked: true,
+    hasPdfExport: false,
+    hasGifExport: false,
+    hasSocialTemplates: false,
+    hasEmailToClient: false,
+    hasStylePresets: false,
+    hasMaterialTakeoff: false,
+    batchUploadLimit: 1,
+    teamSeats: 1,
+    hasWhiteLabel: false,
+    hasCustomWatermark: false,
+    hasPriorityQueue: false,
+    hasDedicatedSupport: false,
+    features: ['3 renders total', '5 basic exterior styles', 'Watermarked output', '7-day trial'],
+    styles: ['Original', 'Modern', 'Farmhouse', 'Craftsman', 'Colonial'],
+    environments: ['Original Site', 'Suburban Street']
   },
   [SubscriptionTier.STANDARD]: {
-    name: 'STANDARD',
+    name: 'Standard',
     priceMonthly: '$49/mo',
     priceAnnual: '$39/mo',
     priceAnnualTotal: '$470/year',
-    renders: 15,
-    features: ['15 renders/month', 'Exterior styles', 'Standard environments', 'Color chip upload']
+    renders: 25,
+    cineRenderVideos: 0,
+    hasInterior: false,
+    hasCompareSlider: true,
+    hasColorChip: true,
+    hasShareToSocial: true,
+    hasProjectFolders: true,
+    hasRenderHistory: true,
+    hasDownloadZip: true,
+    shareLinksWatermarked: true,
+    hasPdfExport: false,
+    hasGifExport: false,
+    hasSocialTemplates: false,
+    hasEmailToClient: false,
+    hasStylePresets: false,
+    hasMaterialTakeoff: false,
+    batchUploadLimit: 1,
+    teamSeats: 1,
+    hasWhiteLabel: false,
+    hasCustomWatermark: false,
+    hasPriorityQueue: false,
+    hasDedicatedSupport: false,
+    features: ['25 renders/month', 'All exterior styles', 'Compare slider', 'Color chip upload', 'Share to social', 'Project folders', 'Download ZIP'],
+    styles: ['All Exterior'],
+    environments: ['All Standard']
   },
   [SubscriptionTier.PRO]: {
-    name: 'PROFESSIONAL',
+    name: 'Professional',
     priceMonthly: '$99/mo',
     priceAnnual: '$79/mo',
     priceAnnualTotal: '$950/year',
     renders: 75,
-    features: ['75 renders/month', 'Interior + Exterior', 'VEO Cinematic Video', 'Compare view', 'Project sharing', 'All styles & environments']
+    cineRenderVideos: 10,
+    hasInterior: true,
+    hasCompareSlider: true,
+    hasColorChip: true,
+    hasShareToSocial: true,
+    hasProjectFolders: true,
+    hasRenderHistory: true,
+    hasDownloadZip: true,
+    shareLinksWatermarked: false,
+    hasPdfExport: true,
+    hasGifExport: true,
+    hasSocialTemplates: true,
+    hasEmailToClient: true,
+    hasStylePresets: true,
+    hasMaterialTakeoff: true,
+    batchUploadLimit: 5,
+    teamSeats: 1,
+    hasWhiteLabel: false,
+    hasCustomWatermark: false,
+    hasPriorityQueue: false,
+    hasDedicatedSupport: false,
+    features: ['75 renders/month', '10 CineRender videos', 'Interior + Exterior', 'PDF presentation export', 'Before/After GIF', 'Material takeoff', 'Batch upload (5)', 'Clean share links'],
+    styles: ['All Exterior', 'All Interior'],
+    environments: ['All Environments']
   },
   [SubscriptionTier.ENTERPRISE]: {
-    name: 'ENTERPRISE',
-    priceMonthly: '$199/mo',
-    priceAnnual: '$159/mo',
-    priceAnnualTotal: '$1,910/year',
-    renders: 99999,
-    features: ['200 renders/month', 'Builder dashboard', 'Priority rendering', 'Offline mode', 'All Pro features']
-  },
-  [SubscriptionTier.PROJECT_PASS]: {
-    name: 'PROJECT PASS',
-    priceMonthly: '$499',
-    priceAnnual: '$499',
-    priceAnnualTotal: '$499 one-time',
-    renders: 100,
-    features: ['12 months access', '100 total renders', 'Interior + Exterior', 'VEO Cinematic Video', 'Project sharing', 'No subscription']
+    name: 'Enterprise',
+    priceMonthly: '$299/mo',
+    priceAnnual: '$239/mo',
+    priceAnnualTotal: '$2,870/year',
+    renders: 200,
+    cineRenderVideos: 20,
+    hasInterior: true,
+    hasCompareSlider: true,
+    hasColorChip: true,
+    hasShareToSocial: true,
+    hasProjectFolders: true,
+    hasRenderHistory: true,
+    hasDownloadZip: true,
+    shareLinksWatermarked: false,
+    hasPdfExport: true,
+    hasGifExport: true,
+    hasSocialTemplates: true,
+    hasEmailToClient: true,
+    hasStylePresets: true,
+    hasMaterialTakeoff: true,
+    batchUploadLimit: 10,
+    teamSeats: 5,
+    hasWhiteLabel: true,
+    hasCustomWatermark: true,
+    hasPriorityQueue: true,
+    hasDedicatedSupport: true,
+    features: ['200 renders/month', '20 CineRender videos', '5 team seats', 'White label mode', 'Custom watermark', 'Priority queue', 'Dedicated Slack support', 'All Pro features'],
+    styles: ['All Exterior', 'All Interior'],
+    environments: ['All Environments']
   }
+};
+
+export const canAccessFeature = (tier: SubscriptionTier, feature: keyof TierFeatures): boolean => {
+  const details = TIER_DETAILS[tier];
+  const value = details[feature];
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'number') return value > 0;
+  return true;
+};
+
+export const hasRendersRemaining = (tier: SubscriptionTier, used: number): boolean => {
+  return used < TIER_DETAILS[tier].renders;
+};
+
+export const canUseCineRender = (tier: SubscriptionTier, used: number): boolean => {
+  const limit = TIER_DETAILS[tier].cineRenderVideos;
+  return limit > 0 && used < limit;
 };
 
 export interface UsageStats {
   rendersCount: number;
+  cineRenderCount: number;
   lastRenderAt: number;
   tier: SubscriptionTier;
   credits: number;
   isSubscribed: boolean;
   billingCycle?: BillingCycle;
+  periodStartAt?: number;
+  periodEndAt?: number;
 }
 
 export enum MaterialType {
@@ -156,10 +292,10 @@ export enum EnvironmentMode {
 }
 
 export const ENVIRONMENT_TIERS: Record<EnvironmentMode, SubscriptionTier> = {
-  [EnvironmentMode.EXISTING]: SubscriptionTier.STANDARD,
+  [EnvironmentMode.EXISTING]: SubscriptionTier.FREE_TRIAL,
+  [EnvironmentMode.SUBURBAN]: SubscriptionTier.FREE_TRIAL,
   [EnvironmentMode.ESTATE]: SubscriptionTier.STANDARD,
   [EnvironmentMode.FOREST]: SubscriptionTier.STANDARD,
-  [EnvironmentMode.SUBURBAN]: SubscriptionTier.STANDARD,
   [EnvironmentMode.ALPS]: SubscriptionTier.PRO,
   [EnvironmentMode.COASTAL]: SubscriptionTier.PRO,
   [EnvironmentMode.DESERT]: SubscriptionTier.PRO,
@@ -224,6 +360,14 @@ export interface Project {
   sharedLinks?: SharedLink[];
   savedColors?: SavedColor[];
   isOfflineCached?: boolean;
+  folderId?: string;
+}
+
+export interface ProjectFolder {
+  id: string;
+  name: string;
+  createdAt: number;
+  projectIds: string[];
 }
 
 export interface SharedLink {
@@ -234,6 +378,12 @@ export interface SharedLink {
   allowDownload: boolean;
   requireEmail: boolean;
   viewCount: number;
+  isWatermarked: boolean;
+  customBranding?: {
+    logoUrl?: string;
+    companyName?: string;
+    primaryColor?: string;
+  };
 }
 
 export interface CompareState {
@@ -243,21 +393,17 @@ export interface CompareState {
   rightLabel: string;
 }
 
-// EXTERIOR STYLES
 export const DESIGN_STYLES: DesignStyle[] = [
-  // STANDARD TIER - EXTERIOR
-  { id: 'original', name: 'Original Structure', dna: 'Preserve form exactly as-is. Apply photorealistic materials and textures.', prompt_keywords: ['original'], tier: SubscriptionTier.STANDARD, mode: 'EXTERIOR' },
+  { id: 'original', name: 'Original Structure', dna: 'Preserve form exactly as-is. Apply photorealistic materials and textures.', prompt_keywords: ['original'], tier: SubscriptionTier.FREE_TRIAL, mode: 'EXTERIOR' },
+  { id: 'modern', name: 'Modern', dna: 'Flat roofs, clean geometric lines, floor-to-ceiling glass, white stucco, minimal ornamentation.', prompt_keywords: ['modern'], tier: SubscriptionTier.FREE_TRIAL, mode: 'EXTERIOR' },
+  { id: 'modern-farmhouse', name: 'Modern Farmhouse', dna: 'White board-and-batten siding, black metal-frame windows, standing seam metal roof accents, wraparound porch.', prompt_keywords: ['farmhouse'], tier: SubscriptionTier.FREE_TRIAL, mode: 'EXTERIOR' },
+  { id: 'craftsman', name: 'Craftsman', dna: 'Exposed rafter tails, tapered porch columns on stone bases, shingle siding, low-pitched roof with wide eaves.', prompt_keywords: ['craftsman'], tier: SubscriptionTier.FREE_TRIAL, mode: 'EXTERIOR' },
+  { id: 'colonial', name: 'Colonial', dna: 'Two-story symmetrical, brick or clapboard, portico entry with columns, black shutters, multi-pane windows.', prompt_keywords: ['colonial'], tier: SubscriptionTier.FREE_TRIAL, mode: 'EXTERIOR' },
   { id: 'traditional-english', name: 'Traditional English', dna: 'Classic red/brown brick, white timber accents, small-pane windows, slate roof.', prompt_keywords: ['traditional english'], tier: SubscriptionTier.STANDARD, mode: 'EXTERIOR' },
   { id: 'cape-cod', name: 'Cape Cod', dna: 'Symmetrical facade, cedar shingle siding, steep gabled roof, central chimney, dormer windows.', prompt_keywords: ['cape cod'], tier: SubscriptionTier.STANDARD, mode: 'EXTERIOR' },
-  { id: 'colonial', name: 'Colonial', dna: 'Two-story symmetrical, brick or clapboard, portico entry with columns, black shutters, multi-pane windows.', prompt_keywords: ['colonial'], tier: SubscriptionTier.STANDARD, mode: 'EXTERIOR' },
-  { id: 'modern', name: 'Modern', dna: 'Flat roofs, clean geometric lines, floor-to-ceiling glass, white stucco, minimal ornamentation.', prompt_keywords: ['modern'], tier: SubscriptionTier.STANDARD, mode: 'EXTERIOR' },
-  { id: 'modern-farmhouse', name: 'Modern Farmhouse', dna: 'White board-and-batten siding, black metal-frame windows, standing seam metal roof accents, wraparound porch.', prompt_keywords: ['farmhouse'], tier: SubscriptionTier.STANDARD, mode: 'EXTERIOR' },
   { id: 'scandinavian', name: 'Scandinavian', dna: 'Light natural wood cladding, minimalist design, large windows, black or charcoal accents, simple gabled roof.', prompt_keywords: ['scandi'], tier: SubscriptionTier.STANDARD, mode: 'EXTERIOR' },
-  { id: 'craftsman', name: 'Craftsman', dna: 'Exposed rafter tails, tapered porch columns on stone bases, shingle siding, low-pitched roof with wide eaves.', prompt_keywords: ['craftsman'], tier: SubscriptionTier.STANDARD, mode: 'EXTERIOR' },
   { id: 'industrial', name: 'Industrial', dna: 'Exposed steel beams, brick walls, large factory-style windows, metal cladding, raw concrete elements.', prompt_keywords: ['industrial'], tier: SubscriptionTier.STANDARD, mode: 'EXTERIOR' },
   { id: 'ranch', name: 'Ranch', dna: 'Single-story, long horizontal profile, low-pitched roof, attached garage, brick or wood siding.', prompt_keywords: ['ranch'], tier: SubscriptionTier.STANDARD, mode: 'EXTERIOR' },
-
-  // PRO TIER - EXTERIOR
   { id: 'tudor', name: 'Tudor Revival', dna: 'Decorative half-timbering, steep cross-gabled roof, tall chimneys, casement windows, stucco and brick.', prompt_keywords: ['tudor'], tier: SubscriptionTier.PRO, mode: 'EXTERIOR' },
   { id: 'french-country', name: 'French Country', dna: 'Cream limestone or stucco, hipped roof with flared eaves, arched windows and doors, copper accents.', prompt_keywords: ['french country'], tier: SubscriptionTier.PRO, mode: 'EXTERIOR' },
   { id: 'mediterranean', name: 'Mediterranean', dna: 'Warm stucco walls, terracotta clay tile roof, arched openings, wrought iron details, courtyard orientation.', prompt_keywords: ['mediterranean'], tier: SubscriptionTier.PRO, mode: 'EXTERIOR' },
@@ -269,8 +415,6 @@ export const DESIGN_STYLES: DesignStyle[] = [
   { id: 'log-cabin', name: 'Luxury Log', dna: 'Massive hand-hewn timber logs, large stone chimney, exposed beam ceilings, rustic mountain lodge aesthetic.', prompt_keywords: ['log cabin'], tier: SubscriptionTier.PRO, mode: 'EXTERIOR' },
   { id: 'georgian', name: 'Georgian', dna: 'Symmetrical brick facade, centered door with pediment, multi-pane sash windows, hip roof, dentil molding.', prompt_keywords: ['georgian'], tier: SubscriptionTier.PRO, mode: 'EXTERIOR' },
   { id: 'mid-century', name: 'Mid-Century Modern', dna: 'Post-and-beam construction, floor-to-ceiling glass, integration with nature, flat planes, organic shapes.', prompt_keywords: ['mid-century modern'], tier: SubscriptionTier.PRO, mode: 'EXTERIOR' },
-
-  // ENTERPRISE TIER - EXTERIOR
   { id: 'modern-english', name: 'Modern English', dna: 'Steep gables, cream or painted brick, black window frames, slate roof, formal symmetry with modern touches.', prompt_keywords: ['english manor'], tier: SubscriptionTier.ENTERPRISE, mode: 'EXTERIOR' },
   { id: 'brutalist', name: 'Brutalist', dna: 'Raw exposed concrete, bold geometric forms, minimal windows, monolithic appearance.', prompt_keywords: ['brutalist'], tier: SubscriptionTier.ENTERPRISE, mode: 'EXTERIOR' },
   { id: 'organic', name: 'Organic', dna: 'Flowing curved shapes, integration with landscape, natural materials, Frank Lloyd Wright influence.', prompt_keywords: ['organic architecture'], tier: SubscriptionTier.ENTERPRISE, mode: 'EXTERIOR' },
@@ -282,8 +426,6 @@ export const DESIGN_STYLES: DesignStyle[] = [
   { id: 'pueblo', name: 'Pueblo Revival', dna: 'Adobe walls with rounded edges, flat roof with parapet, exposed vigas wooden beams, earth tones.', prompt_keywords: ['pueblo'], tier: SubscriptionTier.ENTERPRISE, mode: 'EXTERIOR' },
   { id: 'mountain-lodge', name: 'Mountain Lodge', dna: 'Heavy timber frame, large stone base, expansive windows, steep roof for snow, rustic luxury materials.', prompt_keywords: ['mountain lodge'], tier: SubscriptionTier.ENTERPRISE, mode: 'EXTERIOR' },
   { id: 'coastal-contemporary', name: 'Coastal Contemporary', dna: 'Light and airy, large glass expanses, weathered wood, white and blue palette, elevated on pilings.', prompt_keywords: ['coastal contemporary'], tier: SubscriptionTier.ENTERPRISE, mode: 'EXTERIOR' },
-
-  // INTERIOR STYLES - PRO TIER AND ABOVE
   { id: 'int-modern', name: 'Modern', dna: 'Clean lines, minimalist furniture, neutral palette with bold accents, open floor plan, polished surfaces.', prompt_keywords: ['modern interior'], tier: SubscriptionTier.PRO, mode: 'INTERIOR' },
   { id: 'int-farmhouse', name: 'Farmhouse', dna: 'Shiplap walls, barn doors, apron sink, reclaimed wood, white and natural tones, vintage accents.', prompt_keywords: ['farmhouse interior'], tier: SubscriptionTier.PRO, mode: 'INTERIOR' },
   { id: 'int-scandinavian', name: 'Scandinavian', dna: 'Light woods, white walls, cozy textiles, functional furniture, hygge atmosphere, natural light.', prompt_keywords: ['scandinavian interior'], tier: SubscriptionTier.PRO, mode: 'INTERIOR' },
@@ -298,7 +440,6 @@ export const DESIGN_STYLES: DesignStyle[] = [
   { id: 'int-luxury', name: 'Luxury', dna: 'High-end materials, marble surfaces, gold accents, designer furniture, opulent finishes, grand scale.', prompt_keywords: ['luxury interior'], tier: SubscriptionTier.ENTERPRISE, mode: 'INTERIOR' },
 ];
 
-// Generic material library (no brand names)
 export const MATERIAL_LIBRARY = {
   siding: [
     { id: 'fiber-cement-smooth', name: 'Fiber Cement - Smooth', type: 'siding' },
@@ -361,4 +502,11 @@ export const MATERIAL_LIBRARY = {
     { id: 'glass-tile', name: 'Glass Tile', type: 'backsplash' },
     { id: 'natural-stone', name: 'Natural Stone', type: 'backsplash' },
   ]
+};
+
+export const CREDIT_PACK = {
+  credits: 20,
+  price: '$20',
+  renderCost: 1,
+  cineRenderCost: 5
 };
