@@ -98,3 +98,4 @@ VITE_SUPABASE_ANON_KEY=your-supabase-key (optional)
 # Updated
 # Updated
 # test
+# test
