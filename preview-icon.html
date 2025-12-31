@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CLAD Icon Preview</title>
+    <style>
+        body { background: #333; padding: 40px; font-family: Arial; }
+        h1 { color: white; }
+        .icon-container { display: inline-block; margin: 20px; text-align: center; }
+        .icon-container p { color: #d4a574; margin-top: 10px; }
+        canvas { border-radius: 20%; }
+    </style>
+</head>
+<body>
+    <h1>CLAD App Icon Preview</h1>
+    <p style="color: #aaa;">These are how your app icons will look</p>
+    <br><br>
+    
+    <div class="icon-container">
+        <canvas id="icon1024" width="200" height="200"></canvas>
+        <p>App Store (1024px)</p>
+    </div>
+    
+    <div class="icon-container">
+        <canvas id="icon180" width="90" height="90"></canvas>
+        <p>iPhone (180px)</p>
+    </div>
+    
+    <div class="icon-container">
+        <canvas id="icon120" width="60" height="60"></canvas>
+        <p>iPhone @2x (120px)</p>
+    </div>
+    
+    <script>
+        function drawIcon(canvasId, displaySize) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            const size = displaySize;
+            
+            ctx.fillStyle = '#0a0a0a';
+            ctx.fillRect(0, 0, size, size);
+            
+            ctx.fillStyle = '#ffffff';
+            const fontSize = size * 0.22;
+            ctx.font = `400 ${fontSize}px "Times New Roman", Georgia, serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            const letters = ['C', 'L', 'A', 'D'];
+            const spacing = size * 0.16;
+            const startX = size / 2 - (spacing * 1.5);
+            
+            letters.forEach((letter, i) => {
+                ctx.fillText(letter, startX + (i * spacing), size / 2);
+            });
+        }
+        
+        drawIcon('icon1024', 200);
+        drawIcon('icon180', 90);
+        drawIcon('icon120', 60);
+    </script>
+</body>
+</html>
