@@ -86,11 +86,11 @@ export default function App() {
   const [interiorMaterials, setInteriorMaterials] = useState<{ flooring?: string; cabinets?: string; countertops?: string; backsplash?: string }>({});
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('ANNUAL');
   const [usage, setUsage] = useState<UsageStats>({ 
-    rendersCount: 0, 
+    rendersCount: 0, cineRenderCount: 0, 
     lastRenderAt: 0, 
-    tier: SubscriptionTier.ENTERPRISE, 
-    credits: 250, 
-    isSubscribed: true 
+    tier: SubscriptionTier.FREE_TRIAL, 
+    credits: 3, 
+    isSubscribed: false 
   });
 
   useEffect(() => {
@@ -115,7 +115,7 @@ export default function App() {
         if (savedUsage) {
           setUsage(savedUsage);
         } else if (user) {
-          setUsage({ tier: user.tier, credits: TIER_DETAILS[user.tier].renders, rendersCount: 0, lastRenderAt: Date.now(), isSubscribed: true });
+          setUsage({ tier: user.tier, credits: TIER_DETAILS[user.tier].renders, rendersCount: 0, cineRenderCount: 0, lastRenderAt: Date.now(), isSubscribed: false });
         }
         if (user) { const cloudProjects = await loadProjects(user.id); if (cloudProjects.length > 0) setProjects(cloudProjects); setCurrentUser(user); setView(AppView.DASHBOARD); }
       } catch (e) { console.error(e); }
@@ -308,7 +308,7 @@ export default function App() {
           <h1 className="font-serif-display text-9xl tracking-tighter mb-8 animate-fade-in">CLAD</h1>
           <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.8em] mb-12 text-center max-w-sm italic">The Digital Atelier for Master Builders</p>
           <div className="flex flex-col gap-4 w-full max-w-xs">
-            <button onClick={() => setView(AppView.MEMBERSHIP)} className="bg-white text-black py-7 text-[11px] font-black uppercase tracking-[0.5em] active:scale-95 transition-all shadow-2xl">Create Archive Access</button>
+            <button onClick={() => { setPendingTier(SubscriptionTier.FREE_TRIAL); setView(AppView.SIGNUP); }} className="bg-white text-black py-7 text-[11px] font-black uppercase tracking-[0.5em] active:scale-95 transition-all shadow-2xl">Start Free Trial</button>
             <button onClick={() => setView(AppView.LOGIN)} className="bg-transparent text-white border border-white/10 py-5 text-[11px] font-black uppercase tracking-[0.5em] hover:bg-white/5 transition-all">Principal Login</button>
           </div>
         </div>
@@ -679,7 +679,7 @@ const SignupStep = ({ tier, onComplete }: any) => {
                     <input type="password" placeholder="CREATE PASSPHRASE" value={pass} onChange={e => setPass(e.target.value)} className="w-full bg-black border border-white/10 p-5 text-[11px] tracking-widest focus:border-white focus:outline-none uppercase" />
                     <input type="password" placeholder="CONFIRM PASSPHRASE" value={confirm} onChange={e => setConfirm(e.target.value)} className="w-full bg-black border border-white/10 p-5 text-[11px] tracking-widest focus:border-white focus:outline-none uppercase" />
                     <button onClick={handleFinish} disabled={isSubmitting} className="w-full bg-white text-black py-6 text-[11px] font-black uppercase tracking-[0.5em] shadow-2xl active:scale-95 transition-all disabled:opacity-50">
-                        {isSubmitting ? 'Creating...' : 'Create Archive Access'}
+                        {isSubmitting ? 'Creating...' : 'Start Free Trial'}
                     </button>
                 </div>
             </div>
