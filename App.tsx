@@ -306,7 +306,7 @@ export default function App() {
       {view === AppView.LANDING && (
         <div className="flex-1 flex flex-col items-center justify-center p-8 bg-black">
           <h1 className="font-serif-display text-9xl tracking-tighter mb-8 animate-fade-in">CLAD</h1>
-          <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.8em] mb-12 text-center max-w-sm italic">The Digital Atelier for Master Builders</p>
+          <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.8em] mb-12 text-center max-w-sm italic">The Digital Atelier for Luxury Builders</p>
           <div className="flex flex-col gap-4 w-full max-w-xs">
             <button onClick={() => { setPendingTier(SubscriptionTier.FREE_TRIAL); setView(AppView.SIGNUP); }} className="bg-white text-black py-7 text-[11px] font-black uppercase tracking-[0.5em] active:scale-95 transition-all shadow-2xl">Start Free Trial</button>
             <button onClick={() => setView(AppView.LOGIN)} className="bg-transparent text-white border border-white/10 py-5 text-[11px] font-black uppercase tracking-[0.5em] hover:bg-white/5 transition-all">Principal Login</button>
