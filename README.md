@@ -94,3 +94,4 @@ VITE_API_KEY=your-gemini-api-key
 VITE_SUPABASE_URL=your-supabase-url (optional)
 VITE_SUPABASE_ANON_KEY=your-supabase-key (optional)
 ```
+
