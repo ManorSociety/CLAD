@@ -233,6 +233,13 @@ GOAL: Apply the selected interior design STYLE while preserving the existing roo
 
 CORE PRINCIPLE: CLAD INTERIOR is a "FINISH + STYLING" engine, NOT a remodel engine. Structural fidelity is ALWAYS more important than style fidelity.
 
+=== IMAGE BINDING MODE ===
+The input photo is ground-truth geometry.
+You are NOT allowed to reinterpret, rebuild, or redesign the room.
+You are performing an in-place material and finish upgrade on the exact photographed room.
+Every wall, opening, cabinet run, and ceiling plane in the input image must remain exactly where it is.
+- If you generate any opening (window, door, skylight, cutout, niche) that is not present in the input photo, the output is INVALID.
+
 === NON-NEGOTIABLE STRUCTURE LOCK (NEVER VIOLATE) ===
 These are HARD BUILD features. Preserve EXACTLY as shown in the input image:
 
