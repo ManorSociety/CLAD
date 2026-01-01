@@ -662,7 +662,7 @@ const SignupStep = ({ tier, onComplete, onBack }: any) => {
     };
 
     return (
-        <div className="flex-1 flex flex-col bg-black p-8">
+        <div className="flex-1 flex flex-col bg-black p-8 pt-16">
             <button onClick={onBack} className="self-start mb-4 w-12 h-12 rounded-full border border-white/10 flex items-center justify-center hover:bg-white/5 transition-all"><i className="fa-solid fa-arrow-left text-white"></i></button>
             <div className="flex-1 flex items-center justify-center">
             <div className="bg-zinc-900 border border-white/10 w-full max-w-md rounded-[2.5rem] p-12 space-y-12 shadow-2xl">
