@@ -16,7 +16,6 @@ import { CompareView } from './components/CompareView';
 import { SpecSheetModal } from './components/SpecSheetModal';
 import { ShareModal } from './components/ShareModal';
 import { BuilderDashboard } from './components/BuilderDashboard';
-import { InteriorControls } from './components/InteriorControls';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { PricingSection } from './components/PricingSection';
 
@@ -851,23 +850,7 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
           <div className="p-8 space-y-12">
             
 
-            <section className="space-y-4">
-                <h4 className="text-[9px] font-black text-zinc-600 uppercase tracking-[0.4em]">Render Mode</h4>
-                <div className="flex bg-zinc-900/50 p-1 rounded-lg border border-white/5">
-                    <button 
-                        onClick={() => setRenderMode("EXTERIOR")} 
-                        className={`flex-1 py-3 text-[8px] font-black uppercase tracking-widest rounded transition-all ${renderMode === "EXTERIOR" ? "bg-white text-black" : "text-zinc-600 hover:text-white"}`}
-                    >
-                        Exterior
-                    </button>
-                    <button 
-                        onClick={() => setRenderMode("INTERIOR")} 
-                        className={`flex-1 py-3 text-[8px] font-black uppercase tracking-widest rounded transition-all ${renderMode === "INTERIOR" ? "bg-white text-black" : "text-zinc-600 hover:text-white"}`}
-                    >
-                        Interior
-                    </button>
-                </div>
-            </section>
+
 
             <section className="space-y-4">
                 <h4 className="text-[9px] font-black text-zinc-600 uppercase tracking-[0.4em]">Canvas Format</h4>
@@ -953,16 +936,7 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
             </section>
             )}
 
-            {renderMode === "INTERIOR" && (
-              <InteriorControls
-                roomType={roomType}
-                onRoomTypeChange={setRoomType}
-                selectedStyle={style.id}
-                onStyleChange={(id) => setStyle(DESIGN_STYLES.find(s => s.id === id) || DESIGN_STYLES[0])}
-                materials={interiorMaterials}
-                onMaterialChange={(cat, val) => setInteriorMaterials(prev => ({ ...prev, [cat]: val }))}
-              />
-            )}
+
 
             <section className="space-y-4">
                 <div className="flex justify-between items-center">
