@@ -501,7 +501,7 @@ export default function App() {
           onUpdateProject={(u: Project, creditCost: number = 1) => { 
             if (currentUser) {
               saveProject(u, currentUser.id);
-              supabase.from("profiles").select("credits_used").eq("id", currentUser.id).single().then(({ data, error }) => { console.log("[CREDITS] Select result:", data, error); if (data) { supabase.from("profiles").update({ credits_used: (data.credits_used || 0) + creditCost }).eq("id", currentUser.id).then(({ error: updateError }) => console.log("[CREDITS] Update result:", updateError)); } });
+              supabase.rpc("increment_credits", { user_id: currentUser.id, amount: creditCost });
             }
             setProjects(prev => prev.map(p => p.id === u.id ? u : p)); 
             setUsage(prev => ({...prev, rendersCount: prev.rendersCount + creditCost})); 
