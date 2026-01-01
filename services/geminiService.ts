@@ -228,6 +228,37 @@ export const generateInteriorVision = async (
   }
 
   const prompt = `
+######################################################################
+#                    CRITICAL: READ THIS FIRST                       #
+######################################################################
+
+=== IMAGE GEOMETRY BINDING ===
+The input image is ground-truth geometry.
+You are NOT allowed to redesign, reinterpret, or improve the room layout.
+You are performing an in-place finish and material upgrade on the exact photographed room.
+Every wall plane, window, opening, cabinet run, alcove, and ceiling plane must remain in exactly the same position and shape as shown in the photo.
+No new spatial volumes may be created.
+No walls may be recessed, extended, or reshaped.
+If you generate any opening, window, bench nook, bay, or wall recess that is not visible in the input photo, the output is INVALID.
+
+=== ZERO TOLERANCE VIOLATIONS ===
+The following will cause IMMEDIATE FAILURE:
+- Adding a window where there is no window
+- Adding a door where there is no door  
+- Adding a skylight where there is no skylight
+- Creating a bench/nook/bay that doesn't exist
+- Moving the sink to a different wall
+- Moving appliances to different locations
+- Adding extra sinks or faucets
+- Changing the room's footprint or shape
+- Changing the camera angle or perspective
+
+=== WHAT THIS TOOL DOES ===
+This is a MATERIAL/FINISH SWAP tool, NOT a room redesign tool.
+Think of it like re-skinning a 3D model - the geometry stays locked, only the textures change.
+
+######################################################################
+
 ROLE: Elite interior design CGI specialist for luxury custom homes.
 GOAL: Apply the selected interior design STYLE while preserving the existing room's STRUCTURE with zero hallucinations.
 
