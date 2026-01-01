@@ -22,7 +22,7 @@ export const authService = {
     };
   },
 
-  async login(email: string, password: string): Promise<User> {
+  async login(email: string, password: string): Promise<User & { creditsUsed: number; creditsLimit: number }> {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password
@@ -31,19 +31,22 @@ export const authService = {
     if (error) throw error;
     if (!data.user) throw new Error('Login failed');
     
-    // Get profile with subscription info
     const { data: profile } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', data.user.id)
       .single();
     
+    const tier = (profile?.tier as SubscriptionTier) || SubscriptionTier.GUEST;
+    
     return {
       id: data.user.id,
       email: data.user.email!,
       name: profile?.name || email.split('@')[0],
       studioName: profile?.studio_name,
-      tier: (profile?.tier as SubscriptionTier) || SubscriptionTier.GUEST
+      tier,
+      creditsUsed: profile?.credits_used ?? 0,
+      creditsLimit: profile?.credits_limit ?? TIER_DETAILS[tier].renders
     };
   },
 
@@ -51,7 +54,7 @@ export const authService = {
     await supabase.auth.signOut();
   },
 
-  async getCurrentUser(): Promise<User | null> {
+  async getCurrentUser(): Promise<(User & { creditsUsed: number; creditsLimit: number }) | null> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
     
@@ -61,12 +64,16 @@ export const authService = {
       .eq('id', user.id)
       .single();
     
+    const tier = (profile?.tier as SubscriptionTier) || SubscriptionTier.GUEST;
+    
     return {
       id: user.id,
       email: user.email!,
       name: profile?.name || user.email!.split('@')[0],
       studioName: profile?.studio_name,
-      tier: (profile?.tier as SubscriptionTier) || SubscriptionTier.GUEST
+      tier,
+      creditsUsed: profile?.credits_used ?? 0,
+      creditsLimit: profile?.credits_limit ?? TIER_DETAILS[tier].renders
     };
   },
 

@@ -6,6 +6,7 @@ import { addWatermark, shouldWatermark } from './services/watermarkService';
 import { processImageUpload, optimizeImage } from './services/imageService';
 import { storage, isOnline, onOnlineStatusChange } from './services/storageService';
 import { authService } from './services/authService';
+import { creditsService } from './services/creditsService';
 import { supabase } from './services/supabaseClient';
 import { saveProject, loadProjects, deleteProject } from './services/projectSyncService';
 import { backendService } from './services/backendService';
@@ -73,7 +74,6 @@ export default function App() {
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
-  // New feature states
   const [renderMode, setRenderMode] = useState<RenderMode>('EXTERIOR');
   const [roomType, setRoomType] = useState<RoomType>(RoomType.KITCHEN);
   const [savedColors, setSavedColors] = useState<SavedColor[]>([]);
@@ -115,20 +115,29 @@ export default function App() {
         
         if (savedUsage) {
           setUsage(savedUsage);
-        } else if (user) {
-          setUsage({ tier: user.tier, credits: TIER_DETAILS[user.tier].renders, rendersCount: 0, cineRenderCount: 0, lastRenderAt: Date.now(), isSubscribed: false });
         }
-        if (user) { const cloudProjects = await loadProjects(user.id); if (cloudProjects.length > 0) setProjects(cloudProjects); setCurrentUser(user); setView(AppView.DASHBOARD); }
+        if (user) {
+          setUsage({ 
+            tier: user.tier, 
+            credits: user.creditsLimit, 
+            rendersCount: user.creditsUsed, 
+            cineRenderCount: 0, 
+            lastRenderAt: Date.now(), 
+            isSubscribed: false 
+          });
+          const cloudProjects = await loadProjects(user.id); 
+          if (cloudProjects.length > 0) setProjects(cloudProjects); 
+          setCurrentUser(user); 
+          setView(AppView.DASHBOARD); 
+        }
       } catch (e) { console.error(e); }
       finally { setIsLoading(false); }
     };
     initApp();
     
-    // Listen for online/offline changes
     const unsubscribe = onOnlineStatusChange((online) => {
       setIsOffline(!online);
       if (online) {
-        // Sync pending items when back online
         storage.getPendingSyncItems().then(items => setPendingSyncCount(items.length));
       }
     });
@@ -140,11 +149,15 @@ export default function App() {
     if (!isLoading) { storage.saveProjects(projects); storage.saveUsage(usage); }
   }, [projects, usage, isLoading]);
 
-  const handleAuthSuccess = async (user: User) => {
+  const handleAuthSuccess = async (user: User & { creditsUsed?: number; creditsLimit?: number }) => {
     setCurrentUser(user);
-    setUsage(prev => ({ ...prev, tier: user.tier, credits: TIER_DETAILS[user.tier].renders, rendersCount: 0 }));
+    setUsage(prev => ({ 
+      ...prev, 
+      tier: user.tier, 
+      credits: user.creditsLimit ?? TIER_DETAILS[user.tier].renders, 
+      rendersCount: user.creditsUsed ?? 0 
+    }));
     setView(AppView.DASHBOARD);
-    // Load projects from Supabase
     const cloudProjects = await loadProjects(user.id);
     if (cloudProjects.length > 0) {
       setProjects(cloudProjects);
@@ -161,7 +174,7 @@ export default function App() {
   const handleDeleteProject = async (id: string) => {
     if (!confirm("Permanently archive this vision?")) return;
     await storage.deleteProject(id);
-    await deleteProject(id); // Also delete from Supabase
+    await deleteProject(id);
     setProjects(prev => prev.filter(p => p.id !== id));
   };
 
@@ -486,7 +499,10 @@ export default function App() {
           setShowShare={setShowShare}
           setShowSpecSheet={setShowSpecSheet}
           onUpdateProject={(u: Project, creditCost: number = 1) => { 
-            if (currentUser) saveProject(u, currentUser.id); 
+            if (currentUser) {
+              saveProject(u, currentUser.id);
+              creditsService.useCredits(currentUser.id, creditCost);
+            }
             setProjects(prev => prev.map(p => p.id === u.id ? u : p)); 
             setUsage(prev => ({...prev, rendersCount: prev.rendersCount + creditCost})); 
           }}
@@ -550,7 +566,7 @@ const MembershipPortal = ({ onSelectTier, onBack }: { onSelectTier: (t: Subscrip
                             <section className="space-y-8">
                                 <h4 className="text-[10px] font-black text-white uppercase tracking-[0.5em] border-b border-white/5 pb-4">Style DNAs</h4>
                                 <div className="grid grid-cols-2 gap-4">
-                                    {((TIER_DETAILS[selectedDetailTier] as any).styles || []).map(s => (
+                                    {((TIER_DETAILS[selectedDetailTier] as any).styles || []).map((s: string) => (
                                         <div key={s} className="text-[9px] uppercase tracking-widest text-zinc-500 flex items-center gap-3">
                                             <div className="w-1.5 h-1.5 rounded-full bg-amber-500/30"></div>
                                             {s}
@@ -561,7 +577,7 @@ const MembershipPortal = ({ onSelectTier, onBack }: { onSelectTier: (t: Subscrip
                             <section className="space-y-8">
                                 <h4 className="text-[10px] font-black text-white uppercase tracking-[0.5em] border-b border-white/5 pb-4">Site Contexts</h4>
                                 <div className="grid grid-cols-2 gap-4">
-                                    {((TIER_DETAILS[selectedDetailTier] as any).environments || []).map(e => (
+                                    {((TIER_DETAILS[selectedDetailTier] as any).environments || []).map((e: string) => (
                                         <div key={e} className="text-[9px] uppercase tracking-widest text-zinc-500 flex items-center gap-3">
                                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/30"></div>
                                             {e}
@@ -929,11 +945,7 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                       muted 
                       controls 
                       playsInline
-                      webkit-playsinline="true"
-                      x-webkit-airplay="allow"
-                      preload="auto"
                     />
-                    {/* Download video button */}
                     <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button 
                         onClick={async () => {
@@ -981,7 +993,6 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                 ) : activeImage ? (
                   <>
                     <img src={activeImage} className="w-full h-full object-contain shadow-[0_40px_120px_rgba(0,0,0,0.9)] animate-fade-in transition-all duration-1000" alt="Studio Asset" />
-                    {/* Download/Share buttons for images */}
                     <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button 
                         onClick={() => {
@@ -1033,7 +1044,7 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                         </button>
                       )}
                       <button 
-                        onClick={async () => { const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent); if (isMobile && navigator.share) { try { const response = await fetch(activeImage); const blob = await response.blob(); const file = new File([blob], `${project.name.toLowerCase().replace(/\s+/g, "-")}-render-${Date.now()}.jpg`, { type: "image/jpeg" }); await navigator.share({ files: [file], title: "CLAD Render" }); } catch (err) { if (err.name !== "AbortError") setShowShare(true); } } else { setShowShare(true); } }}
+                        onClick={async () => { const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent); if (isMobile && navigator.share) { try { const response = await fetch(activeImage); const blob = await response.blob(); const file = new File([blob], `${project.name.toLowerCase().replace(/\s+/g, "-")}-render-${Date.now()}.jpg`, { type: "image/jpeg" }); await navigator.share({ files: [file], title: "CLAD Render" }); } catch (err: any) { if (err.name !== "AbortError") setShowShare(true); } } else { setShowShare(true); } }}
                         className="w-12 h-12 bg-black/80 backdrop-blur rounded-full flex items-center justify-center text-white hover:bg-amber-500 hover:text-black transition-all"
                         title="Share"
                       >
@@ -1047,7 +1058,8 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                         >
                           <i className="fa-solid fa-list-check"></i>
                         </button>
-                      )}                    </div>
+                      )}
+                    </div>
                   </>
                 ) : (
                     <div className="text-center space-y-8 max-w-lg p-10">
@@ -1064,7 +1076,7 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
             </div>
           </div>
           
-          <div className="w-full h-24 md:h-32 flex gap-6 overflow-x-auto pb-6 shrink-0 px-6 scrollbar-hide flex-nowrap touch-pan-x -webkit-overflow-scrolling-touch">
+          <div className="w-full h-24 md:h-32 flex gap-6 overflow-x-auto pb-6 shrink-0 px-6 scrollbar-hide flex-nowrap touch-pan-x">
              {viewMode === '3D' && (
                <>
                  <button onClick={() => setRenderIdx(-1)} className={`h-full aspect-video border shrink-0 overflow-hidden rounded-xl transition-all ${renderIdx === -1 ? 'border-white scale-105 z-10 shadow-2xl' : 'border-white/10 opacity-30 hover:opacity-100'}`}><img src={project.imageUrl} className="w-full h-full object-cover grayscale" /></button>
@@ -1082,4 +1094,3 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
     </div>
   );
 };
-
