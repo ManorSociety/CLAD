@@ -82,6 +82,7 @@ export default function App() {
   const [showSpecSheet, setShowSpecSheet] = useState(false);
   const [showBuilderDashboard, setShowBuilderDashboard] = useState(false);
   const [isOffline, setIsOffline] = useState(!isOnline());
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [pendingSyncCount, setPendingSyncCount] = useState(0);
   const [interiorMaterials, setInteriorMaterials] = useState<{ flooring?: string; cabinets?: string; countertops?: string; backsplash?: string }>({});
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('ANNUAL');
@@ -170,6 +171,21 @@ export default function App() {
       setShowAccountMenu(false);
   };
 
+  const handleRefresh = async () => {
+    if (isRefreshing || !currentUser) return;
+    setIsRefreshing(true);
+    try {
+      const cloudProjects = await loadProjects(currentUser.id);
+      if (cloudProjects.length > 0) setProjects(cloudProjects);
+      const { data } = await supabase.from("profiles").select("credits_used, credits_limit").eq("id", currentUser.id).single();
+      if (data) {
+        setUsage(prev => ({ ...prev, rendersCount: data.credits_used || 0, credits: data.credits_limit || prev.credits }));
+      }
+    } catch (e) { console.error("Refresh failed:", e); }
+    finally { setIsRefreshing(false); }
+  };
+
+
   const handleDeleteProject = async (id: string) => {
     if (!confirm("Permanently archive this vision?")) return;
     await storage.deleteProject(id);
@@ -230,7 +246,7 @@ export default function App() {
 
   const GlobalHeader = () => (
     <header className="fixed top-0 inset-x-0 h-28 pt-14 md:pt-0 md:h-20 glass-panel border-b border-transparent md:border-white/5 z-[1000] px-8 md:px-12 flex items-center justify-between">
-        <button onClick={() => setView(AppView.DASHBOARD)} className="font-serif-display text-2xl tracking-[0.2em] text-white hover:text-amber-500 transition-colors">CLAD</button>
+        <button onClick={handleRefresh} className={`font-serif-display text-2xl tracking-[0.2em] transition-all duration-300 ${isRefreshing ? "animate-pulse" : "hover:text-amber-500"}`} style={{ color: isRefreshing ? "#0ABAB5" : "white" }}>CLAD</button>
         
         <div className="relative">
             <button 
