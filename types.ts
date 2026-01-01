@@ -317,15 +317,23 @@ export enum CameraAngle {
 
 export enum RoomType {
   KITCHEN = 'Kitchen',
-  LIVING = 'Living Room',
-  BEDROOM = 'Primary Bedroom',
-  BATHROOM = 'Bathroom',
-  OFFICE = 'Home Office',
+  PREP_KITCHEN = 'Prep Kitchen / Scullery',
+  PANTRY = 'Pantry / Food Storage',
   DINING = 'Dining Room',
-  BASEMENT = 'Basement',
-  LAUNDRY = 'Laundry Room',
-  MUDROOM = 'Mudroom',
-  PANTRY = 'Pantry'
+  LIVING = 'Living Room / Great Room',
+  FAMILY = 'Family Room / Lounge',
+  BEDROOM = 'Bedroom',
+  BATHROOM = 'Bathroom',
+  CLOSET = 'Closet / Dressing Room',
+  LAUNDRY = 'Laundry / Mudroom',
+  OFFICE = 'Office / Study',
+  LOFT = 'Loft / Bonus Room',
+  THEATER = 'Theater / Media Room',
+  GAME = 'Game / Recreation Room',
+  FITNESS = 'Exercise / Fitness Room',
+  SPORTS = 'Sports Court',
+  STORAGE = 'Storage / Utility',
+  ENTRY = 'Entry / Foyer / Hall'
 }
 
 export interface DesignStyle {

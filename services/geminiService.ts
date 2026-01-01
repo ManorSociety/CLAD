@@ -202,6 +202,54 @@ export const generateInteriorVision = async (
 ): Promise<string> => {
   const ai = getAIClient();
   const { mimeType: oMime, data: oData } = parseBase64(project.imageUrl);
+
+  // Normalize roomType safely
+  const roomTypeStr = typeof roomType === "string" ? roomType : (RoomType as any)[roomType] ?? String(roomType);
+  const roomTypeKey = roomTypeStr.toLowerCase();
+
+  // ============================================================
+  // STEP 1: STRUCTURE AUDIT - Analyze image geometry first
+  // ============================================================
+  const auditPrompt = `Analyze this interior image and return ONLY a JSON object with this exact schema. No other text, no code fences.
+{
+  "windows": { "count": 0, "byWall": {"left":0,"right":0,"back":0,"front":0}, "notes":"" },
+  "doors": { "count": 0, "positions": [] },
+  "skylights": { "count": 0 },
+  "sink": { "present": false, "count": 0, "position": "" },
+  "faucets": { "count": 0 },
+  "washerDryer": { "present": false, "position": "" },
+  "range": { "present": false },
+  "island": { "present": false },
+  "fireplace": { "present": false },
+  "builtInBench": { "present": false },
+  "cameraAngle": "straight"
+}
+Fill in actual values from the image. Return ONLY valid JSON.`;
+
+  let structureAudit = "{}";
+  try {
+    const auditResponse = await ai.models.generateContent({
+      model: "gemini-2.0-flash",
+      contents: { parts: [
+        { inlineData: { mimeType: oMime, data: oData } },
+        { text: auditPrompt }
+      ]},
+    });
+    const auditText = auditResponse.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+    const raw = auditText.replace(/```json|```/g, "").trim();
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try { JSON.parse(jsonMatch[0]); structureAudit = jsonMatch[0]; }
+      catch { structureAudit = "{}"; }
+    }
+    console.log("[STRUCTURE AUDIT]", structureAudit);
+  } catch (e) {
+    console.error("[STRUCTURE AUDIT FAILED]", e);
+  }
+
+  // ============================================================
+  // STEP 2: BUILD RENDER PROMPT WITH AUDIT BINDING
+  // ============================================================
   const parts: any[] = [{ inlineData: { mimeType: oMime, data: oData } }];
 
   if (project.referenceImages && project.referenceImages.length > 0) {
@@ -227,154 +275,194 @@ export const generateInteriorVision = async (
     if (materials.backsplash) materialInstructions += `\n- Backsplash: ${materials.backsplash}`;
   }
 
+  // Room-specific hard rules
+  let roomSpecificRules = '';
+  if (roomTypeKey.includes("kitchen")) {
+    roomSpecificRules = `
+=== KITCHEN HARD RULES ===
+- Do NOT add a second sink or move the existing sink.
+- Do NOT add or move the range/cooktop.
+- Do NOT add an island if none exists.
+- Do NOT add a window above the sink if none exists.
+- Keep all appliances in their exact positions.`;
+  } else if (roomTypeKey.includes("laundry")) {
+    roomSpecificRules = `
+=== LAUNDRY ROOM HARD RULES ===
+- Do NOT add a mudroom bench, window seat, bay nook, or banquette.
+- Do NOT add additional windows beyond what exists.
+- Do NOT add a second sink or move sink location.
+- Do NOT add a pantry door or extra doorway.
+- Keep washer/dryer exactly in-place if present.
+- This room does NOT need beautification with extra features - keep it functional.`;
+  } else if (roomTypeKey.includes("bath")) {
+    roomSpecificRules = `
+=== BATHROOM HARD RULES ===
+- Do NOT add a window if none exists.
+- Do NOT add a second vanity or sink.
+- Do NOT move the toilet, tub, or shower.
+- Do NOT add a freestanding tub if none exists.
+- Keep all plumbing fixtures in exact positions.`;
+  }
+
   const prompt = `
 ######################################################################
-#                    CRITICAL: READ THIS FIRST                       #
+#           STRUCTURE INVENTORY - YOU MUST MATCH THIS EXACTLY        #
 ######################################################################
 
-=== IMAGE GEOMETRY BINDING ===
+The following structure was detected in the input image:
+${structureAudit}
+
+YOUR OUTPUT MUST HAVE:
+- The EXACT same number of windows in the EXACT same positions
+- The EXACT same number of doors in the EXACT same positions  
+- The EXACT same number of sinks/faucets in the EXACT same positions
+- All appliances in their EXACT original positions
+- NO new openings, benches, nooks, or bays
+
+If your output does not match this inventory, it is INVALID.
+
+######################################################################
+#                    IMAGE GEOMETRY BINDING                          #
+######################################################################
+
 The input image is ground-truth geometry.
 You are NOT allowed to redesign, reinterpret, or improve the room layout.
 You are performing an in-place finish and material upgrade on the exact photographed room.
 Every wall plane, window, opening, cabinet run, alcove, and ceiling plane must remain in exactly the same position and shape as shown in the photo.
-No new spatial volumes may be created.
-No walls may be recessed, extended, or reshaped.
-If you generate any opening, window, bench nook, bay, or wall recess that is not visible in the input photo, the output is INVALID.
+
+This is a TEXTURE/MATERIAL SWAP, not a redesign.
+Think of it as re-skinning a 3D model - geometry stays locked, only surfaces change.
+
+${roomSpecificRules}
 
 === ZERO TOLERANCE VIOLATIONS ===
-The following will cause IMMEDIATE FAILURE:
-- Adding a window where there is no window
-- Adding a door where there is no door  
-- Adding a skylight where there is no skylight
-- Creating a bench/nook/bay that doesn't exist
-- Moving the sink to a different wall
-- Moving appliances to different locations
-- Adding extra sinks or faucets
-- Changing the room's footprint or shape
-- Changing the camera angle or perspective
+- Adding a window = FAILURE
+- Adding a door = FAILURE
+- Adding a skylight = FAILURE
+- Adding a bench/nook/bay = FAILURE
+- Moving any sink = FAILURE
+- Moving any appliance = FAILURE
+- Changing room shape = FAILURE
 
-=== WHAT THIS TOOL DOES ===
-This is a MATERIAL/FINISH SWAP tool, NOT a room redesign tool.
-Think of it like re-skinning a 3D model - the geometry stays locked, only the textures change.
+If you cannot follow these constraints perfectly, do NOT invent anything. 
+Output the same room with minimal finish changes only.
 
-######################################################################
+=== STYLE APPLICATION (SURFACES ONLY) ===
+Style: ${style.name}
+DNA: ${style.dna}
 
-ROLE: Elite interior design CGI specialist for luxury custom homes.
-GOAL: Apply the selected interior design STYLE while preserving the existing room's STRUCTURE with zero hallucinations.
-
-CORE PRINCIPLE: CLAD INTERIOR is a "FINISH + STYLING" engine, NOT a remodel engine. Structural fidelity is ALWAYS more important than style fidelity.
-
-=== IMAGE BINDING MODE ===
-The input photo is ground-truth geometry.
-You are NOT allowed to reinterpret, rebuild, or redesign the room.
-You are performing an in-place material and finish upgrade on the exact photographed room.
-Every wall, opening, cabinet run, and ceiling plane in the input image must remain exactly where it is.
-- If you generate any opening (window, door, skylight, cutout, niche) that is not present in the input photo, the output is INVALID.
-
-=== NON-NEGOTIABLE STRUCTURE LOCK (NEVER VIOLATE) ===
-These are HARD BUILD features. Preserve EXACTLY as shown in the input image:
-
-ROOM GEOMETRY:
-- Room boundaries, dimensions, and layout (no layout edits)
-- Wall positions and room shape (no moving walls)
-- Ceiling height and ceiling form (flat, vaulted, tray, coffered) exactly as shown
-- Soffits, bulkheads, structural posts, columns exactly as shown
-- Stair openings, landings, railing positions if visible
-- Built-in niches/openings, arches, alcoves EXACTLY as shown (do not add new ones)
-
-OPENINGS (ABSOLUTE):
-- Doorways: count, size, position, casing location (do not add/remove/move)
-- Windows: count, size, position, muntin pattern/grid, sill height (do not add/remove/move)
-- Skylights: count, size, position (do not add/remove/move)
-- Pass-throughs / cutouts: preserve exactly (do not add/remove/move)
-
-FIXTURES + ROUGH-IN (ABSOLUTE):
-- Fireplaces: ONLY if already present. Do not add a fireplace to a room without one.
-- Plumbing fixtures: sinks, tubs, showers, toilets, faucets, drains: preserve count and exact location. Do not add new plumbing.
-- Electrical/lighting rough-in: if visible (recessed can layout, pendant locations, fan), preserve count and placement. Do not add lights.
-
-KITCHEN RULES (IF KITCHEN IS PRESENT):
-- Do not move or add: sink, range, hood, fridge, dishwasher.
-- Do not add an island/peninsula unless one already exists OR user explicitly requests it AND specifies placement.
-- Do not change cabinet footprint or counter footprint (no changing the layout, only door style and finishes).
-
-BATHROOM RULES (IF BATHROOM IS PRESENT):
-- Do not move or add: vanity, sinks, toilet, tub, shower.
-- Do not change wet-wall locations.
-- Tile/stone/fixture finishes can change, but fixture COUNT and LOCATION cannot.
-
-=== ABSOLUTE "NO OPENINGS" RULE ===
-- DO NOT add ANY opening of any kind: no new windows, doors, skylights, arches, pass-throughs, niches, cutouts, or extra rooms. Ever.
-- Adding ANY new opening (window/door/skylight/arch/cutout) is an AUTOMATIC FAILURE.
-- If the selected style normally includes an architectural feature (arches, beams, fireplace, coffered ceiling, skylight), apply it ONLY if it already exists in the input. If it does not exist, express the style using finishes + lighting style + furniture + decor only.
-
-=== ALLOWED ADDITIONS (ONLY WITH EXPLICIT USER PLACEMENT) ===
-- The model may add a NEW fixture/appliance/built-in ONLY if the user explicitly requests it AND specifies placement/location.
-- Otherwise: if it isn't visible, do NOT add it.
-
-=== STYLE APPLICATION (FINISHES ONLY) ===
-Apply this interior style DNA:
-${style.dna}
-
-ROOM TYPE: ${roomType}
+ROOM TYPE: ${roomTypeStr}
 ${materialInstructions}
 ${colorInstructions}
 
-=== SAFE CHANGES (STYLE CONTROLS THESE ONLY) ===
-You MAY change ONLY these categories while preserving structure:
-- Wall finish: paint color, paint sheen, wallpaper, plaster/limewash texture
-- Non-structural trim: panel molding, wainscoting, baseboards/casing/crown style (do not change openings)
-- Flooring materials and finish
-- Cabinet door style + cabinet color + hardware finish (WITHOUT changing cabinet layout/positions)
-- Countertops + backsplash materials (WITHOUT changing counter shape/layout)
-- Fixtures style/finish only (faucets, cabinet pulls, shower trim) WITHOUT adding fixtures
-- Lighting fixture STYLE only (do not add new lights; do not move fixture positions)
-- Furniture, decor, rugs, bedding, artwork, mirrors (decor only), plants
-- Window treatments: drapery, roman shades, woven shades, blinds (do not change window size/placement)
+=== WHAT YOU MAY CHANGE ===
+- Wall paint/color/texture (not wall positions)
+- Flooring material (not room shape)
+- Cabinet door style and color (not cabinet positions)
+- Countertop material (not counter layout)
+- Hardware and fixture finishes (not fixture locations)
+- Decor, furniture, rugs, window treatments
+- Lighting fixture style (not positions or count)
 
-=== CAMERA & OUTPUT ===
+=== CAMERA ===
 - LIGHTING: ${activeLight}
-- Maintain the EXACT same camera angle, position, perspective, and composition as input.
-- Do not add dramatic angles or artistic perspectives.
-- Output must be photorealistic "interior design magazine quality."
-- Must look like a designer upgraded finishes and styling, not like the room was rebuilt.
+- Maintain EXACT same camera angle and perspective as input
+- No dramatic angles or artistic reframing
 
 === CUSTOM INSTRUCTIONS ===
-${customInstruction || "Apply style faithfully while preserving room structure."}
+${customInstruction || "Apply style through finishes only. Do not modify room structure."}
 
-=== FINAL CHECKLIST (MUST PASS BEFORE OUTPUT) ===
-Verify:
-- Same number of windows/doors/skylights/openings as input
-- No new fixtures or appliances added (unless user explicitly requested with placement)
-- No relocated major elements (vanity/toilet/tub/sink/range/island/hood/fridge/faucets)
-- Same camera angle and composition
-- Style is obvious through finishes + lighting style + furnishings only
-
-OUTPUT: Photorealistic interior visualization ready for client presentation.
+=== OUTPUT REQUIREMENT ===
+Generate a photorealistic finish upgrade that could be achieved WITHOUT construction changes.
+The room geometry must be IDENTICAL to the input photo.
 `;
 
   parts.push({ text: prompt });
 
-  const response = await ai.models.generateContent({
-    model: isHighQuality ? "gemini-3-pro-image-preview" : "gemini-2.5-flash-image",
-    contents: { parts },
-    config: {
-      responseModalities: ["image", "text"],
-      imageSafety: "block_none"
-    }
-  });
+  // ============================================================
+  // STEP 3: SELF-CHECK + ONE RETRY SYSTEM
+  // ============================================================
+  const extractBase64 = (dataUrl: string) => {
+    const m = dataUrl.match(/^data:(.*);base64,(.*)$/);
+    if (!m) throw new Error("BAD_DATA_URL");
+    return { mimeType: m[1], data: m[2] };
+  };
 
-  for (const part of response.candidates?.[0]?.content?.parts || []) {
-    if (part.inlineData) {
-      return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+  const auditOutputImage = async (mimeType: string, data: string) => {
+    try {
+      const res = await ai.models.generateContent({
+        model: "gemini-2.0-flash",
+        contents: { parts: [
+          { inlineData: { mimeType, data } },
+          { text: auditPrompt }
+        ]},
+      });
+      const t = res.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+      const raw = t.replace(/```json|```/g, "").trim();
+      const jm = raw.match(/\{[\s\S]*\}/);
+      if (!jm) return null;
+      try { return JSON.parse(jm[0]); } catch { return null; }
+    } catch { return null; }
+  };
+
+  const auditsMatch = (a: any, b: any) => {
+    if (!a || !b) return true; // fail open if audit fails
+    return (
+      (a.windows?.count ?? 0) === (b.windows?.count ?? 0) &&
+      (a.doors?.count ?? 0) === (b.doors?.count ?? 0) &&
+      (a.skylights?.count ?? 0) === (b.skylights?.count ?? 0) &&
+      (a.sink?.count ?? 0) === (b.sink?.count ?? 0) &&
+      (a.faucets?.count ?? 0) === (b.faucets?.count ?? 0) &&
+      (!!a.washerDryer?.present) === (!!b.washerDryer?.present) &&
+      (!!a.builtInBench?.present) === (!!b.builtInBench?.present)
+    );
+  };
+
+  const runGen = async (extraFixNote = "") => {
+    const promptWithFix = extraFixNote ? `${prompt}\n\n=== FIX MISMATCH (MANDATORY) ===\n${extraFixNote}\n` : prompt;
+    const genParts = [...parts.filter((x: any) => !x.text), { text: promptWithFix }];
+
+    const resp = await ai.models.generateContent({
+      model: "gemini-2.0-flash-exp-image-generation",
+      contents: { parts: genParts },
+      config: { responseModalities: ["image", "text"], imageSafety: "block_none" }
+    });
+
+    for (const part of resp.candidates?.[0]?.content?.parts || []) {
+      if (part.inlineData) {
+        return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+      }
     }
+    throw new Error("EMPTY_ENGINE_RESPONSE");
+  };
+
+  // First generation attempt
+  const out1 = await runGen();
+  
+  // Audit the output
+  const { mimeType: m1, data: d1 } = extractBase64(out1);
+  const auditAObj = (() => { try { return JSON.parse(structureAudit); } catch { return null; } })();
+  const auditBObj = await auditOutputImage(m1, d1);
+
+  console.log("[AUDIT COMPARISON]", { input: auditAObj, output: auditBObj });
+
+  // If mismatch, retry once with fix instruction
+  if (!auditsMatch(auditAObj, auditBObj)) {
+    console.warn("[AUDIT MISMATCH] Retrying with fix instruction...");
+    const fixNote = `Your previous output FAILED structure compliance.
+You MUST match this inventory exactly: ${structureAudit}
+Specifically:
+- Windows: input has ${auditAObj?.windows?.count ?? 0}, you MUST have exactly ${auditAObj?.windows?.count ?? 0}
+- Doors: input has ${auditAObj?.doors?.count ?? 0}, you MUST have exactly ${auditAObj?.doors?.count ?? 0}
+- Sinks: input has ${auditAObj?.sink?.count ?? 0}, you MUST have exactly ${auditAObj?.sink?.count ?? 0}
+DO NOT add or remove any openings or fixtures.`;
+    const out2 = await runGen(fixNote);
+    return out2;
   }
-  throw new Error("EMPTY_ENGINE_RESPONSE");
+
+  return out1;
 };
 
-/**
- * Main render function that routes to exterior or interior
- */
 export const generateDesignVision = async (
   project: Project,
   style: DesignStyle,
