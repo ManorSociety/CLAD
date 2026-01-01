@@ -969,7 +969,7 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                               const file = new File([blob], `${project.name.toLowerCase().replace(/\s+/g, "-")}-video.mp4`, { type: "video/mp4" });
                               await navigator.share({ files: [file], title: "CLAD Video" });
                             } catch (err) { console.log("Share cancelled"); }
-                          }
+                          } else { setShowShare(true); }
                         }}
                         className="w-12 h-12 bg-black/80 backdrop-blur rounded-full flex items-center justify-center text-white hover:bg-amber-500 hover:text-black transition-all"
                         title="Share Video"
