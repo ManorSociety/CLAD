@@ -501,7 +501,7 @@ export default function App() {
           onUpdateProject={(u: Project, creditCost: number = 1) => { 
             if (currentUser) {
               saveProject(u, currentUser.id);
-              supabase.rpc("increment_credits", { user_id: currentUser.id, amount: creditCost });
+              supabase.rpc("increment_credits", { user_id: currentUser.id, amount: creditCost }).then(({ error }) => { if (error) console.error("[CREDITS RPC ERROR]", error); else console.log("[CREDITS] Added", creditCost); });
             }
             setProjects(prev => prev.map(p => p.id === u.id ? u : p)); 
             setUsage(prev => ({...prev, rendersCount: prev.rendersCount + creditCost})); 
