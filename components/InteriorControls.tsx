@@ -31,11 +31,23 @@ export const InteriorControls: React.FC<InteriorControlsProps> = ({
 
   const roomTypes: { type: RoomType; icon: string }[] = [
     { type: RoomType.KITCHEN, icon: 'fa-utensils' },
+    { type: RoomType.PREP_KITCHEN, icon: 'fa-blender' },
+    { type: RoomType.PANTRY, icon: 'fa-jar' },
+    { type: RoomType.DINING, icon: 'fa-wine-glass' },
     { type: RoomType.LIVING, icon: 'fa-couch' },
+    { type: RoomType.FAMILY, icon: 'fa-tv' },
     { type: RoomType.BEDROOM, icon: 'fa-bed' },
     { type: RoomType.BATHROOM, icon: 'fa-bath' },
+    { type: RoomType.CLOSET, icon: 'fa-shirt' },
+    { type: RoomType.LAUNDRY, icon: 'fa-soap' },
     { type: RoomType.OFFICE, icon: 'fa-briefcase' },
-    { type: RoomType.DINING, icon: 'fa-wine-glass' },
+    { type: RoomType.LOFT, icon: 'fa-stairs' },
+    { type: RoomType.THEATER, icon: 'fa-film' },
+    { type: RoomType.GAME, icon: 'fa-gamepad' },
+    { type: RoomType.FITNESS, icon: 'fa-dumbbell' },
+    { type: RoomType.SPORTS, icon: 'fa-basketball' },
+    { type: RoomType.STORAGE, icon: 'fa-box' },
+    { type: RoomType.ENTRY, icon: 'fa-door-open' },
   ];
 
   return (
