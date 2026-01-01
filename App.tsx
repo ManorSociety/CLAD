@@ -829,14 +829,14 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
             <button onClick={onBack} className="text-[11px] font-black uppercase text-zinc-500 hover:text-white transition-colors tracking-[0.4em] flex-shrink-0">BACK</button>
             <div className="flex bg-zinc-900 p-1 rounded-full border border-white/10 flex-shrink-0 overflow-hidden">
                 <button onClick={() => setViewMode('3D')} className={`px-4 md:px-6 py-2 text-[9px] font-black uppercase tracking-widest rounded-full transition-all ${viewMode === '3D' ? 'bg-white text-black' : 'text-zinc-500 hover:text-white'}`}>3D</button>
-                <button onClick={() => setViewMode('VEO')} className={`px-4 md:px-6 py-2 text-[9px] font-black uppercase tracking-widest rounded-full transition-all ${viewMode === 'VEO' ? 'bg-white text-black' : 'text-zinc-500 hover:text-white'}`}>VEO</button>
+                {renderMode === "EXTERIOR" && <button onClick={() => setViewMode('VEO')} className={`px-4 md:px-6 py-2 text-[9px] font-black uppercase tracking-widest rounded-full transition-all ${viewMode === 'VEO' ? 'bg-white text-black' : 'text-zinc-500 hover:text-white'}`}>VEO</button>}
             </div>
             <button onClick={() => setShowSidebar(!showSidebar)} className="w-10 h-10 flex items-center justify-center border border-white/10 rounded-full text-[10px] font-black hover:border-white transition-all flex-shrink-0">
                 <i className={`fa-solid ${showSidebar ? 'fa-xmark' : 'fa-sliders'}`}></i>
             </button>
         </div>
         <div className="flex gap-4 items-center flex-shrink-0 ml-4 overflow-hidden">
-            {viewMode === 'VEO' && (
+            {viewMode === 'VEO' && renderMode === "EXTERIOR" && (
                 <button onClick={handleCinematic} className="hidden lg:block px-6 py-3 bg-amber-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-amber-500 transition-all rounded-sm">GEN VEO</button>
             )}
             <button onClick={handleExecute} className="px-4 py-2 sm:px-6 sm:py-3 bg-white text-black text-[7px] sm:text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-xl rounded-sm leading-tight text-center flex flex-col items-center justify-center min-w-[90px] sm:min-w-[120px]">
@@ -1119,7 +1119,7 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                             <i className="fa-solid fa-film text-amber-500 text-6xl mb-8 opacity-20"></i>
                             <h3 className="text-zinc-400 text-3xl font-serif-display uppercase mb-4">Studio Branch Empty</h3>
                             <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.4em] mb-12">No high-fidelity {viewMode} assets detected.</p>
-                            {viewMode === 'VEO' && (
+                            {viewMode === 'VEO' && renderMode === "EXTERIOR" && (
                                 <button onClick={handleCinematic} className="w-full py-6 bg-amber-600 text-white text-[11px] font-black uppercase tracking-[0.4em] active:scale-95 transition-all rounded-full shadow-2xl">RENDER CINEMATIC VEO</button>
                             )}
                         </div>

@@ -228,20 +228,53 @@ export const generateInteriorVision = async (
   }
 
   const prompt = `
-ROLE: Elite Interior Design CGI Specialist for luxury custom homes.
+ROLE: Elite interior design CGI specialist for luxury custom homes.
+GOAL: Apply the selected interior design STYLE while preserving the existing room's STRUCTURE with zero hallucinations.
 
-TASK: Transform this ${roomType} interior into a photorealistic visualization.
+CORE PRINCIPLE: CLAD INTERIOR is a "FINISH + STYLING" engine, NOT a remodel engine. Structural fidelity is ALWAYS more important than style fidelity.
 
-=== STRUCTURAL PRESERVATION (CRITICAL) ===
-PRESERVE EXACTLY as shown:
-- Room dimensions and layout
-- Window positions and sizes
-- Door positions
-- Ceiling height and features
-- Structural columns or beams
-- Basic room shape
+=== NON-NEGOTIABLE STRUCTURE LOCK (NEVER VIOLATE) ===
+These are HARD BUILD features. Preserve EXACTLY as shown in the input image:
 
-=== STYLE APPLICATION ===
+ROOM GEOMETRY:
+- Room boundaries, dimensions, and layout (no layout edits)
+- Wall positions and room shape (no moving walls)
+- Ceiling height and ceiling form (flat, vaulted, tray, coffered) exactly as shown
+- Soffits, bulkheads, structural posts, columns exactly as shown
+- Stair openings, landings, railing positions if visible
+- Built-in niches/openings, arches, alcoves EXACTLY as shown (do not add new ones)
+
+OPENINGS (ABSOLUTE):
+- Doorways: count, size, position, casing location (do not add/remove/move)
+- Windows: count, size, position, muntin pattern/grid, sill height (do not add/remove/move)
+- Skylights: count, size, position (do not add/remove/move)
+- Pass-throughs / cutouts: preserve exactly (do not add/remove/move)
+
+FIXTURES + ROUGH-IN (ABSOLUTE):
+- Fireplaces: ONLY if already present. Do not add a fireplace to a room without one.
+- Plumbing fixtures: sinks, tubs, showers, toilets, faucets, drains: preserve count and exact location. Do not add new plumbing.
+- Electrical/lighting rough-in: if visible (recessed can layout, pendant locations, fan), preserve count and placement. Do not add lights.
+
+KITCHEN RULES (IF KITCHEN IS PRESENT):
+- Do not move or add: sink, range, hood, fridge, dishwasher.
+- Do not add an island/peninsula unless one already exists OR user explicitly requests it AND specifies placement.
+- Do not change cabinet footprint or counter footprint (no changing the layout, only door style and finishes).
+
+BATHROOM RULES (IF BATHROOM IS PRESENT):
+- Do not move or add: vanity, sinks, toilet, tub, shower.
+- Do not change wet-wall locations.
+- Tile/stone/fixture finishes can change, but fixture COUNT and LOCATION cannot.
+
+=== ABSOLUTE "NO OPENINGS" RULE ===
+- DO NOT add ANY opening of any kind: no new windows, doors, skylights, arches, pass-throughs, niches, cutouts, or extra rooms. Ever.
+- Adding ANY new opening (window/door/skylight/arch/cutout) is an AUTOMATIC FAILURE.
+- If the selected style normally includes an architectural feature (arches, beams, fireplace, coffered ceiling, skylight), apply it ONLY if it already exists in the input. If it does not exist, express the style using finishes + lighting style + furniture + decor only.
+
+=== ALLOWED ADDITIONS (ONLY WITH EXPLICIT USER PLACEMENT) ===
+- The model may add a NEW fixture/appliance/built-in ONLY if the user explicitly requests it AND specifies placement/location.
+- Otherwise: if it isn't visible, do NOT add it.
+
+=== STYLE APPLICATION (FINISHES ONLY) ===
 Apply this interior style DNA:
 ${style.dna}
 
@@ -249,30 +282,35 @@ ROOM TYPE: ${roomType}
 ${materialInstructions}
 ${colorInstructions}
 
-=== WHAT YOU MAY CHANGE ===
-- Wall colors and textures
-- Flooring materials
-- Cabinet styles and colors
-- Countertop materials
-- Lighting fixtures (style only)
-- Furniture and decor
-- Window treatments
-- Hardware and fixtures
+=== SAFE CHANGES (STYLE CONTROLS THESE ONLY) ===
+You MAY change ONLY these categories while preserving structure:
+- Wall finish: paint color, paint sheen, wallpaper, plaster/limewash texture
+- Non-structural trim: panel molding, wainscoting, baseboards/casing/crown style (do not change openings)
+- Flooring materials and finish
+- Cabinet door style + cabinet color + hardware finish (WITHOUT changing cabinet layout/positions)
+- Countertops + backsplash materials (WITHOUT changing counter shape/layout)
+- Fixtures style/finish only (faucets, cabinet pulls, shower trim) WITHOUT adding fixtures
+- Lighting fixture STYLE only (do not add new lights; do not move fixture positions)
+- Furniture, decor, rugs, bedding, artwork, mirrors (decor only), plants
+- Window treatments: drapery, roman shades, woven shades, blinds (do not change window size/placement)
 
-=== CAMERA & PERSPECTIVE ===
-- CRITICAL: Maintain the EXACT same camera angle, position, and perspective as the input photo
-- Do NOT change the viewing angle - if the photo is straight-on, render straight-on
-- Do NOT add dramatic angles or artistic perspectives
-- Match the original photo composition exactly
-
-=== RENDERING SPECIFICATIONS ===
-- LIGHTING: ${activeLight} - realistic interior lighting
-- QUALITY: Ultra photorealistic, interior design magazine quality
-- PERSPECTIVE: CRITICAL - Maintain the EXACT same camera angle and viewpoint as the input photo. Do NOT change the viewing angle or add dramatic perspectives.
-- NO stylized or artistic interpretations
+=== CAMERA & OUTPUT ===
+- LIGHTING: ${activeLight}
+- Maintain the EXACT same camera angle, position, perspective, and composition as input.
+- Do not add dramatic angles or artistic perspectives.
+- Output must be photorealistic "interior design magazine quality."
+- Must look like a designer upgraded finishes and styling, not like the room was rebuilt.
 
 === CUSTOM INSTRUCTIONS ===
 ${customInstruction || "Apply style faithfully while preserving room structure."}
+
+=== FINAL CHECKLIST (MUST PASS BEFORE OUTPUT) ===
+Verify:
+- Same number of windows/doors/skylights/openings as input
+- No new fixtures or appliances added (unless user explicitly requested with placement)
+- No relocated major elements (vanity/toilet/tub/sink/range/island/hood/fridge/faucets)
+- Same camera angle and composition
+- Style is obvious through finishes + lighting style + furnishings only
 
 OUTPUT: Photorealistic interior visualization ready for client presentation.
 `;
