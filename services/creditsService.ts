@@ -10,7 +10,10 @@ export const creditsService = {
       .eq('id', userId)
       .single();
     
-    if (error || !data) return null;
+    if (error) {
+      console.error('[creditsService] getCredits error:', error);
+      return null;
+    }
     
     return {
       used: data.credits_used ?? 0,
@@ -19,10 +22,20 @@ export const creditsService = {
   },
 
   async useCredits(userId: string, amount: number = 1): Promise<boolean> {
-    if (!isSupabaseConfigured()) return false;
+    if (!isSupabaseConfigured()) {
+      console.log('[creditsService] Supabase not configured');
+      return false;
+    }
+    
+    console.log('[creditsService] useCredits called for user:', userId, 'amount:', amount);
     
     const current = await this.getCredits(userId);
-    if (!current) return false;
+    if (!current) {
+      console.error('[creditsService] Could not get current credits');
+      return false;
+    }
+    
+    console.log('[creditsService] Current credits:', current, 'New credits_used:', current.used + amount);
     
     const { error } = await supabase
       .from('profiles')
@@ -32,7 +45,13 @@ export const creditsService = {
       })
       .eq('id', userId);
     
-    return !error;
+    if (error) {
+      console.error('[creditsService] Update failed:', error);
+      return false;
+    }
+    
+    console.log('[creditsService] Credits updated successfully');
+    return true;
   },
 
   async syncCredits(userId: string): Promise<{ used: number; limit: number } | null> {
