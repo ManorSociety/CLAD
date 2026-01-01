@@ -716,6 +716,8 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
   const filteredEnvironments = Object.values(EnvironmentMode).filter(e => tierValue(ENVIRONMENT_TIERS[e]) <= tierValue(userTier));
 
   const handleExecute = async () => {
+    let wakeLock: any = null;
+    try { wakeLock = await navigator.wakeLock?.request("screen"); } catch (e) { console.log("Wake lock not supported"); }
     if (creditsAvailable <= 0) { onTopUp(); return; }
     setIsProcessing(true);
     try {
@@ -736,10 +738,12 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
             alert(msg);
         }
     }
-    finally { setIsProcessing(false); }
+    finally { setIsProcessing(false); if (wakeLock) wakeLock.release(); }
   };
 
   const handleCinematic = async () => {
+    let wakeLock: any = null;
+    try { wakeLock = await navigator.wakeLock?.request("screen"); } catch (e) { console.log("Wake lock not supported"); }
     if (creditsAvailable < 5) { onTopUp(); return; }
     const currentImg = renderIdx >= 0 ? project.generatedRenderings[renderIdx] : project.imageUrl;
     setIsCinematic(true);
@@ -758,7 +762,7 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
             alert(msg);
         }
     }
-    finally { setIsCinematic(false); }
+    finally { setIsCinematic(false); if (wakeLock) wakeLock.release(); }
   };
 
   const handleRefUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
