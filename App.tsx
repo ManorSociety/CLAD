@@ -735,6 +735,9 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
   const [isCinematic, setIsCinematic] = useState(false);
   const [refImages, setRefImages] = useState<string[]>(project.referenceImages || []);
   const [showSidebar, setShowSidebar] = useState(window.innerWidth > 1024);
+  const [renderMode, setRenderMode] = useState<"EXTERIOR" | "INTERIOR">(project.renderMode || "EXTERIOR");
+  const [roomType, setRoomType] = useState<RoomType>(project.roomType || RoomType.KITCHEN);
+  const [interiorMaterials, setInteriorMaterials] = useState<{ flooring?: string; cabinets?: string; countertops?: string; backsplash?: string }>(project.interiorMaterials || {});
   
   const [renderIdx, setRenderIdx] = useState(project.generatedRenderings?.length > 0 ? project.generatedRenderings.length - 1 : -1);
   const [videoIdx, setVideoIdx] = useState(project.generatedVideos?.length > 0 ? project.generatedVideos.length - 1 : -1);
@@ -753,7 +756,7 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
     if (creditsAvailable <= 0) { onTopUp(); return; }
     setIsProcessing(true);
     try {
-      const activeProject = { ...project, environment: env, lighting: light, cameraAngle: angle, customDirectives: magicPencil, referenceImages: refImages, preferredAspectRatio: aspectRatio };
+      const activeProject = { ...project, environment: env, lighting: light, cameraAngle: angle, customDirectives: magicPencil, referenceImages: refImages, preferredAspectRatio: aspectRatio, renderMode, roomType, interiorMaterials };
       const result = await generateDesignVision(activeProject, style, magicPencil, true, aspectRatio);
       const optimized = await optimizeImage(result);
       const finalImage = shouldWatermark(userTier) ? await addWatermark(optimized) : optimized;
@@ -847,6 +850,25 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
         <aside className={`absolute lg:relative inset-y-0 left-0 w-80 border-r border-white/5 bg-black/95 backdrop-blur-3xl lg:bg-black overflow-y-auto shrink-0 scrollbar-hide pb-20 z-[1550] transition-all duration-500 ease-in-out ${showSidebar ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0 lg:translate-x-0 lg:opacity-100'}`}>
           <div className="p-8 space-y-12">
             
+
+            <section className="space-y-4">
+                <h4 className="text-[9px] font-black text-zinc-600 uppercase tracking-[0.4em]">Render Mode</h4>
+                <div className="flex bg-zinc-900/50 p-1 rounded-lg border border-white/5">
+                    <button 
+                        onClick={() => setRenderMode("EXTERIOR")} 
+                        className={`flex-1 py-3 text-[8px] font-black uppercase tracking-widest rounded transition-all ${renderMode === "EXTERIOR" ? "bg-white text-black" : "text-zinc-600 hover:text-white"}`}
+                    >
+                        Exterior
+                    </button>
+                    <button 
+                        onClick={() => setRenderMode("INTERIOR")} 
+                        className={`flex-1 py-3 text-[8px] font-black uppercase tracking-widest rounded transition-all ${renderMode === "INTERIOR" ? "bg-white text-black" : "text-zinc-600 hover:text-white"}`}
+                    >
+                        Interior
+                    </button>
+                </div>
+            </section>
+
             <section className="space-y-4">
                 <h4 className="text-[9px] font-black text-zinc-600 uppercase tracking-[0.4em]">Canvas Format</h4>
                 <div className="flex bg-zinc-900/50 p-1 rounded-lg border border-white/5">
@@ -865,6 +887,7 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                 </div>
             </section>
 
+            {renderMode === "EXTERIOR" && (
             <section className="space-y-4">
                 <div className="flex justify-between items-center">
                     <h4 className="text-[9px] font-black text-zinc-600 uppercase tracking-[0.4em]">Site Context</h4>
@@ -876,6 +899,7 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                 ))}
                 </div>
             </section>
+            )}
 
             <section className="space-y-4">
                 <h4 className="text-[9px] font-black text-zinc-600 uppercase tracking-[0.4em]">Atmosphere</h4>
@@ -915,6 +939,7 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                 </button>
             </section>
 
+            {renderMode === "EXTERIOR" && (
             <section className="space-y-4">
                 <div className="flex justify-between items-center">
                     <h4 className="text-[9px] font-black text-zinc-600 uppercase tracking-[0.4em]">Arch DNA</h4>
@@ -926,6 +951,18 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                 ))}
                 </div>
             </section>
+            )}
+
+            {renderMode === "INTERIOR" && (
+              <InteriorControls
+                roomType={roomType}
+                onRoomTypeChange={setRoomType}
+                selectedStyle={style.id}
+                onStyleChange={(id) => setStyle(DESIGN_STYLES.find(s => s.id === id) || DESIGN_STYLES[0])}
+                materials={interiorMaterials}
+                onMaterialChange={(cat, val) => setInteriorMaterials(prev => ({ ...prev, [cat]: val }))}
+              />
+            )}
 
             <section className="space-y-4">
                 <div className="flex justify-between items-center">
