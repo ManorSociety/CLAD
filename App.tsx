@@ -1,3 +1,4 @@
+import JSZip from 'jszip';
 import React, { useState, useEffect, useRef } from 'react';
 import { AppView, Project, DESIGN_STYLES, DesignStyle, LightingMode, SubscriptionTier, UsageStats, EnvironmentMode, TIER_DETAILS, User, CameraAngle, ENVIRONMENT_TIERS, AspectRatio, RenderMode, RoomType, SavedColor, CompareState, BillingCycle } from './types';
 import { generateDesignVision, generateCinematicVideo, formatGeminiError, extractColorFromChip } from './services/geminiService';
@@ -977,6 +978,26 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                       >
                         <i className="fa-solid fa-download"></i>
                       </button>
+                      {project.generatedRenderings?.length > 1 && (
+                        <button 
+                          onClick={async () => {
+                            const zip = new JSZip();
+                            zip.file("original.jpg", await fetch(project.imageUrl).then(r => r.blob()));
+                            for (let i = 0; i < project.generatedRenderings.length; i++) {
+                              zip.file(`render-${i + 1}.jpg`, await fetch(project.generatedRenderings[i]).then(r => r.blob()));
+                            }
+                            const blob = await zip.generateAsync({ type: "blob" });
+                            const link = document.createElement("a");
+                            link.href = URL.createObjectURL(blob);
+                            link.download = `${project.name.toLowerCase().replace(/\s+/g, "-")}-all-renders.zip`;
+                            link.click();
+                          }}
+                          className="w-12 h-12 bg-black/80 backdrop-blur rounded-full flex items-center justify-center text-white hover:bg-blue-500 hover:text-white transition-all"
+                          title="Download All as ZIP"
+                        >
+                          <i className="fa-solid fa-file-zipper"></i>
+                        </button>
+                      )}
                       {renderIdx >= 0 && (
                         <button 
                           onClick={() => {
