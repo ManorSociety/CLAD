@@ -1016,7 +1016,7 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                         </button>
                       )}
                       <button 
-                        onClick={() => setShowShare(true)}
+                        onClick={async () => { const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent); if (isMobile && navigator.share) { try { const response = await fetch(activeImage); const blob = await response.blob(); const file = new File([blob], `${project.name.toLowerCase().replace(/\s+/g, "-")}-render-${Date.now()}.jpg`, { type: "image/jpeg" }); await navigator.share({ files: [file], title: "CLAD Render" }); } catch (err) { setShowShare(true); } } else { setShowShare(true); } }}
                         className="w-12 h-12 bg-black/80 backdrop-blur rounded-full flex items-center justify-center text-white hover:bg-amber-500 hover:text-black transition-all"
                         title="Share"
                       >
