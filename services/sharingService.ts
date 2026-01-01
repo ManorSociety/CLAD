@@ -3,6 +3,7 @@
  */
 
 import { Project, SharedLink } from '../types';
+import { supabase } from './supabaseClient';
 
 // Generate a unique share ID
 const generateShareId = (): string => {
@@ -24,76 +25,85 @@ const getBaseUrl = (): string => {
 
 export const sharingService = {
   /**
-   * Create a shareable link for a project
+   * Create a shareable link for a project - saves to Supabase
    */
-  createShareLink(
+  async createShareLink(
     project: Project,
     options: {
       allowDownload?: boolean;
       requireEmail?: boolean;
       expiresInDays?: number;
     } = {}
-  ): SharedLink {
+  ): Promise<SharedLink | null> {
     const shareId = generateShareId();
     const baseUrl = getBaseUrl();
     
-    const link: SharedLink = {
+    const expiresAt = options.expiresInDays 
+      ? new Date(Date.now() + (options.expiresInDays * 24 * 60 * 60 * 1000)).toISOString()
+      : null;
+
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+
+    const { error } = await supabase.from('shares').insert({
+      id: shareId,
+      project_name: project.name,
+      image_url: project.imageUrl,
+      renderings: project.generatedRenderings || [],
+      videos: project.generatedVideos || [],
+      allow_download: options.allowDownload ?? true,
+      require_email: options.requireEmail ?? false,
+      expires_at: expiresAt,
+      user_id: user?.id
+    });
+
+    if (error) {
+      console.error('Error creating share:', error);
+      return null;
+    }
+
+    return {
       id: shareId,
       url: `${baseUrl}/share/${shareId}`,
       createdAt: Date.now(),
-      expiresAt: options.expiresInDays 
-        ? Date.now() + (options.expiresInDays * 24 * 60 * 60 * 1000) 
-        : undefined,
+      expiresAt: expiresAt ? new Date(expiresAt).getTime() : undefined,
       allowDownload: options.allowDownload ?? true,
       requireEmail: options.requireEmail ?? false,
       viewCount: 0
     };
-
-    // In production, this would save to Supabase
-    // For now, we store in localStorage
-    const shares = JSON.parse(localStorage.getItem('clad_shares') || '{}');
-    shares[shareId] = {
-      projectId: project.id,
-      projectName: project.name,
-      imageUrl: project.imageUrl,
-      renderings: project.generatedRenderings,
-      videos: project.generatedVideos,
-      ...link
-    };
-    localStorage.setItem('clad_shares', JSON.stringify(shares));
-
-    return link;
   },
 
   /**
-   * Get shared project data by share ID
+   * Get shared project data by share ID from Supabase
    */
-  getSharedProject(shareId: string): any | null {
-    const shares = JSON.parse(localStorage.getItem('clad_shares') || '{}');
-    const share = shares[shareId];
+  async getSharedProject(shareId: string): Promise<any | null> {
+    const { data, error } = await supabase
+      .from('shares')
+      .select('*')
+      .eq('id', shareId)
+      .single();
     
-    if (!share) return null;
+    if (error || !data) return null;
     
     // Check expiration
-    if (share.expiresAt && Date.now() > share.expiresAt) {
+    if (data.expires_at && new Date() > new Date(data.expires_at)) {
       return null;
     }
     
     // Increment view count
-    share.viewCount = (share.viewCount || 0) + 1;
-    shares[shareId] = share;
-    localStorage.setItem('clad_shares', JSON.stringify(shares));
+    await supabase
+      .from('shares')
+      .update({ view_count: (data.view_count || 0) + 1 })
+      .eq('id', shareId);
     
-    return share;
+    return data;
   },
 
   /**
    * Delete a share link
    */
-  deleteShareLink(shareId: string): void {
-    const shares = JSON.parse(localStorage.getItem('clad_shares') || '{}');
-    delete shares[shareId];
-    localStorage.setItem('clad_shares', JSON.stringify(shares));
+  async deleteShareLink(shareId: string): Promise<void> {
+    await supabase.from('shares').delete().eq('id', shareId);
   },
 
   /**
@@ -137,7 +147,6 @@ export const sharingService = {
           ctx.drawImage(img1, 0, 0);
           ctx.drawImage(img2, img1.width, 0);
 
-          // Add labels
           ctx.fillStyle = 'rgba(0,0,0,0.7)';
           ctx.fillRect(10, 10, 100, 30);
           ctx.fillRect(img1.width + 10, 10, 100, 30);
@@ -153,7 +162,6 @@ export const sharingService = {
           ctx.drawImage(img1, 0, 0);
           ctx.drawImage(img2, 0, img1.height);
 
-          // Add labels
           ctx.fillStyle = 'rgba(0,0,0,0.7)';
           ctx.fillRect(10, 10, 100, 30);
           ctx.fillRect(10, img1.height + 10, 100, 30);
@@ -164,7 +172,6 @@ export const sharingService = {
           ctx.fillText(afterLabel, 25, img1.height + 30);
         }
 
-        // Add watermark
         if (addWatermark) {
           ctx.fillStyle = 'rgba(0,0,0,0.5)';
           const wmWidth = 150;
@@ -190,54 +197,12 @@ export const sharingService = {
   },
 
   /**
-   * Share to social media or native share
+   * Share via email - opens email client
    */
-  async shareToSocial(
-    platform: 'instagram' | 'facebook' | 'pinterest' | 'twitter' | 'native',
-    imageUrl: string,
-    options: {
-      title?: string;
-      description?: string;
-    } = {}
-  ): Promise<void> {
-    const title = options.title || 'Check out this home design';
-    const description = options.description || 'Created with CLAD - AI Architectural Visualization';
-
-    // For native share (mobile)
-    if (platform === 'native' && navigator.share) {
-      try {
-        // Convert base64 to blob for sharing
-        const response = await fetch(imageUrl);
-        const blob = await response.blob();
-        const file = new File([blob], 'clad-render.jpg', { type: 'image/jpeg' });
-
-        await navigator.share({
-          title,
-          text: description,
-          files: [file]
-        });
-        return;
-      } catch (err) {
-        console.error('Native share failed:', err);
-      }
-    }
-
-    // Fallback: download image
-    const link = document.createElement('a');
-    link.href = imageUrl;
-    link.download = 'clad-render.jpg';
-    link.click();
-
-    // Show platform-specific message
-    const messages: Record<string, string> = {
-      instagram: 'Image downloaded! Open Instagram and share from your gallery.',
-      facebook: 'Image downloaded! Open Facebook and share from your gallery.',
-      pinterest: 'Image downloaded! Open Pinterest and pin from your gallery.',
-      twitter: 'Image downloaded! Open Twitter and share from your gallery.',
-      native: 'Image downloaded to your device.'
-    };
-
-    alert(messages[platform] || messages.native);
+  shareViaEmail(shareUrl: string, projectName: string): void {
+    const subject = encodeURIComponent(`Check out this home design: ${projectName}`);
+    const body = encodeURIComponent(`I wanted to share this architectural visualization with you:\n\n${shareUrl}\n\nCreated with CLAD - AI Architectural Visualization`);
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
   },
 
   /**
@@ -248,7 +213,6 @@ export const sharingService = {
       await navigator.clipboard.writeText(url);
       return true;
     } catch (err) {
-      // Fallback for older browsers
       const textArea = document.createElement('textarea');
       textArea.value = url;
       document.body.appendChild(textArea);
