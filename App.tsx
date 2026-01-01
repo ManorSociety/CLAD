@@ -333,6 +333,7 @@ export default function App() {
         <SignupStep 
             tier={pendingTier}
             onComplete={(user) => { handleAuthSuccess(user); }}
+            onBack={() => setView(AppView.LANDING)}
         />
       )}
 
@@ -638,7 +639,7 @@ const CheckoutFlow = ({ tier, onSuccess, onCancel }: any) => {
     );
 };
 
-const SignupStep = ({ tier, onComplete }: any) => {
+const SignupStep = ({ tier, onComplete, onBack }: any) => {
     const [email, setEmail] = useState('');
     const [name, setName] = useState('');
     const [pass, setPass] = useState('');
@@ -661,7 +662,9 @@ const SignupStep = ({ tier, onComplete }: any) => {
     };
 
     return (
-        <div className="flex-1 flex items-center justify-center bg-black p-8">
+        <div className="flex-1 flex flex-col bg-black p-8">
+            <button onClick={onBack} className="self-start mb-4 w-12 h-12 rounded-full border border-white/10 flex items-center justify-center hover:bg-white/5 transition-all"><i className="fa-solid fa-arrow-left text-white"></i></button>
+            <div className="flex-1 flex items-center justify-center">
             <div className="bg-zinc-900 border border-white/10 w-full max-w-md rounded-[2.5rem] p-12 space-y-12 shadow-2xl">
                 <div className="text-center space-y-4">
                     <i className="fa-solid fa-shield-halved text-emerald-500 text-4xl"></i>
@@ -682,6 +685,7 @@ const SignupStep = ({ tier, onComplete }: any) => {
                         {isSubmitting ? 'Creating...' : 'Start Free Trial'}
                     </button>
                 </div>
+            </div>
             </div>
         </div>
     );
