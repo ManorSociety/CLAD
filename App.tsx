@@ -6,7 +6,6 @@ import { addWatermark, shouldWatermark } from './services/watermarkService';
 import { processImageUpload, optimizeImage } from './services/imageService';
 import { storage, isOnline, onOnlineStatusChange } from './services/storageService';
 import { authService } from './services/authService';
-import { creditsService } from './services/creditsService';
 import { supabase } from './services/supabaseClient';
 import { saveProject, loadProjects, deleteProject } from './services/projectSyncService';
 import { backendService } from './services/backendService';
