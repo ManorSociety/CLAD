@@ -1145,7 +1145,7 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                       controls 
                       playsInline
                     />
-                    <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute top-4 right-4 hidden md:flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button 
                         onClick={async () => {
                           const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -1192,7 +1192,7 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                 ) : activeImage ? (
                   <>
                     <img src={activeImage} className="w-full h-full object-contain shadow-[0_40px_120px_rgba(0,0,0,0.9)] animate-fade-in transition-all duration-1000" alt="Studio Asset" />
-                    <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute top-4 right-4 hidden md:flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button 
                         onClick={() => {
                           const link = document.createElement('a');
@@ -1297,6 +1297,104 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                 <button key={i} onClick={() => setVideoIdx(i)} className={`h-full aspect-video border shrink-0 overflow-hidden rounded-xl transition-all ${videoIdx === i ? 'border-amber-500 scale-105 z-10 shadow-2xl shadow-amber-500/30' : 'border-amber-500/10 opacity-30 hover:opacity-100'}`}><video src={v} className="w-full h-full object-cover" /></button>
              ))}
           </div>
+          
+          {/* Mobile Action Bar - only shows on mobile */}
+          {viewMode === '3D' && activeImage && (
+            <div className="md:hidden w-full py-4 px-6 bg-black border-t border-white/5 flex justify-center gap-4">
+              <button 
+                onClick={() => {
+                  const link = document.createElement('a');
+                  link.href = activeImage;
+                  link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}-render-${Date.now()}.jpg`;
+                  link.click();
+                }}
+                className="w-11 h-11 bg-zinc-900 border border-white/10 rounded-full flex items-center justify-center text-white active:bg-white active:text-black transition-all"
+                title="Download"
+              >
+                <i className="fa-solid fa-download text-sm"></i>
+              </button>
+              
+              {project.generatedRenderings?.length > 1 && (
+                <button 
+                  onClick={async () => {
+                    const zip = new JSZip();
+                    zip.file("original.jpg", await fetch(project.imageUrl).then(r => r.blob()));
+                    for (let i = 0; i < project.generatedRenderings.length; i++) {
+                      zip.file(`render-${i + 1}.jpg`, await fetch(project.generatedRenderings[i]).then(r => r.blob()));
+                    }
+                    const blob = await zip.generateAsync({ type: "blob" });
+                    const link = document.createElement("a");
+                    link.href = URL.createObjectURL(blob);
+                    link.download = `${project.name.toLowerCase().replace(/\s+/g, "-")}-all-renders.zip`;
+                    link.click();
+                  }}
+                  className="w-11 h-11 bg-zinc-900 border border-white/10 rounded-full flex items-center justify-center text-white active:bg-blue-500 transition-all"
+                  title="Download All"
+                >
+                  <i className="fa-solid fa-file-zipper text-sm"></i>
+                </button>
+              )}
+              
+              {renderIdx >= 0 && (
+                <button 
+                  onClick={() => {
+                    setCompareState({
+                      leftImage: project.imageUrl,
+                      rightImage: activeImage,
+                      leftLabel: 'ORIGINAL',
+                      rightLabel: style?.name?.toUpperCase() || 'RENDERED'
+                    });
+                    setShowCompare(true);
+                  }}
+                  className="w-11 h-11 bg-zinc-900 border border-white/10 rounded-full flex items-center justify-center text-white active:bg-white active:text-black transition-all"
+                  title="Compare"
+                >
+                  <i className="fa-solid fa-arrows-left-right text-sm"></i>
+                </button>
+              )}
+              
+              <button 
+                onClick={async () => {
+                  if (navigator.share) {
+                    try {
+                      const response = await fetch(activeImage);
+                      const blob = await response.blob();
+                      const file = new File([blob], `${project.name.toLowerCase().replace(/\s+/g, "-")}-render.jpg`, { type: "image/jpeg" });
+                      await navigator.share({ files: [file], title: "CLAD Render" });
+                    } catch (err: any) {
+                      if (err.name !== "AbortError") setShowShare(true);
+                    }
+                  } else {
+                    setShowShare(true);
+                  }
+                }}
+                className="w-11 h-11 bg-zinc-900 border border-white/10 rounded-full flex items-center justify-center text-white active:bg-amber-500 active:text-black transition-all"
+                title="Share"
+              >
+                <i className="fa-solid fa-share-nodes text-sm"></i>
+              </button>
+              
+              {renderIdx >= 0 && (
+                <button
+                  onClick={() => setShowSpecSheet(true)}
+                  className="w-11 h-11 bg-zinc-900 border border-white/10 rounded-full flex items-center justify-center text-white active:bg-emerald-500 active:text-black transition-all"
+                  title="Material Specs"
+                >
+                  <i className="fa-solid fa-list-check text-sm"></i>
+                </button>
+              )}
+              
+              {renderIdx >= 0 && (
+                <button
+                  onClick={() => generateProjectPDF(project, style)}
+                  className="w-11 h-11 bg-zinc-900 border border-white/10 rounded-full flex items-center justify-center text-white active:bg-red-500 transition-all"
+                  title="Export PDF"
+                >
+                  <i className="fa-solid fa-file-pdf text-sm"></i>
+                </button>
+              )}
+            </div>
+          )}
         </main>
       </div>
     </div>
