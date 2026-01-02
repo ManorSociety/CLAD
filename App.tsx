@@ -80,6 +80,9 @@ export default function App() {
   const [showShare, setShowShare] = useState(false);
   const [showSpecSheet, setShowSpecSheet] = useState(false);
   const [showBuilderDashboard, setShowBuilderDashboard] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState('');
   const [isOffline, setIsOffline] = useState(!isOnline());
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pendingSyncCount, setPendingSyncCount] = useState(0);
@@ -422,8 +425,23 @@ export default function App() {
                 <input type="file" className="hidden" onChange={(e) => e.target.files?.[0] && handleProjectUpload(e.target.files[0])} />
             </label>
           </div>
+          
+          {/* Search Bar */}
+          <div className="max-w-7xl mx-auto w-full mb-10">
+            <div className="relative">
+              <i className="fa-solid fa-magnifying-glass absolute left-6 top-1/2 -translate-y-1/2 text-zinc-600 text-sm"></i>
+              <input
+                type="text"
+                placeholder="Search projects..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-zinc-900/50 border border-white/5 rounded-full py-4 pl-14 pr-6 text-white text-[11px] font-medium tracking-wide placeholder:text-zinc-600 focus:outline-none focus:border-white/20 transition-colors"
+              />
+            </div>
+          </div>
+          
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 max-w-7xl mx-auto w-full pb-20">
-            {projects.map(p => (
+            {projects.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase())).map(p => (
               <div key={p.id} className="aspect-[4/5] bg-zinc-900 border border-white/5 rounded-2xl relative group overflow-hidden shadow-2xl transition-all hover:border-white/20">
                 <img onClick={() => { setCurrentProjectId(p.id); setView(AppView.EDITOR); }} src={(p.generatedRenderings?.length > 0) ? p.generatedRenderings[p.generatedRenderings.length-1] : p.imageUrl} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-1000 cursor-pointer" alt="" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent opacity-60 pointer-events-none"></div>
@@ -432,9 +450,34 @@ export default function App() {
                         <i className="fa-solid fa-trash-can text-[10px]"></i>
                     </button>
                 </div>
-                <div className="absolute bottom-8 left-8 space-y-2 pointer-events-none">
-                    <p className="text-[10px] font-black uppercase tracking-[0.4em] truncate max-w-[150px]">{p.name}</p>
-                    <p className="text-[8px] text-zinc-500 uppercase tracking-widest">{new Date(p.createdAt).toLocaleDateString()}</p>
+                <div className="absolute bottom-8 left-8 space-y-2">
+                    {editingProjectId === p.id ? (
+                      <input
+                        type="text"
+                        value={editingName}
+                        onChange={(e) => setEditingName(e.target.value)}
+                        onBlur={() => {
+                          if (editingName.trim()) {
+                            const updated = projects.map(proj => proj.id === p.id ? {...proj, name: editingName.trim()} : proj);
+                            setProjects(updated);
+                            if (currentUser) saveProject({...p, name: editingName.trim()}, currentUser.id);
+                          }
+                          setEditingProjectId(null);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                          if (e.key === 'Escape') setEditingProjectId(null);
+                        }}
+                        autoFocus
+                        className="bg-black/80 border border-white/20 rounded px-2 py-1 text-[10px] font-black uppercase tracking-[0.2em] w-[150px] focus:outline-none focus:border-amber-500"
+                      />
+                    ) : (
+                      <p 
+                        onClick={(e) => { e.stopPropagation(); setEditingProjectId(p.id); setEditingName(p.name); }}
+                        className="text-[10px] font-black uppercase tracking-[0.4em] truncate max-w-[150px] cursor-pointer hover:text-amber-500 transition-colors"
+                      >{p.name}</p>
+                    )}
+                    <p className="text-[8px] text-zinc-500 uppercase tracking-widest pointer-events-none">{new Date(p.createdAt).toLocaleDateString()}</p>
                 </div>
               </div>
             ))}
