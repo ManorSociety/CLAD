@@ -83,6 +83,8 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
+  const [editingProfileName, setEditingProfileName] = useState(false);
+  const [profileNameValue, setProfileNameValue] = useState('');
   const [isOffline, setIsOffline] = useState(!isOnline());
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pendingSyncCount, setPendingSyncCount] = useState(0);
@@ -506,7 +508,35 @@ export default function App() {
                         <div className="space-y-6">
                             <div className="space-y-2">
                                 <p className="text-[9px] text-zinc-600 uppercase tracking-widest">Full Name</p>
-                                <p className="text-lg font-medium">{currentUser.name}</p>
+                                {editingProfileName ? (
+                                  <input
+                                    type="text"
+                                    value={profileNameValue}
+                                    onChange={(e) => setProfileNameValue(e.target.value)}
+                                    onBlur={async () => {
+                                      if (profileNameValue.trim() && currentUser) {
+                                        const { supabase } = await import('./services/supabaseService');
+                                        await supabase.from('profiles').update({ name: profileNameValue.trim() }).eq('id', currentUser.id);
+                                        setCurrentUser({...currentUser, name: profileNameValue.trim()});
+                                      }
+                                      setEditingProfileName(false);
+                                    }}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                                      if (e.key === 'Escape') setEditingProfileName(false);
+                                    }}
+                                    autoFocus
+                                    className="bg-black border border-white/20 rounded-lg px-4 py-2 text-lg font-medium w-full focus:outline-none focus:border-amber-500"
+                                  />
+                                ) : (
+                                  <p 
+                                    onClick={() => { setEditingProfileName(true); setProfileNameValue(currentUser.name); }}
+                                    className="text-lg font-medium cursor-pointer hover:text-amber-500 transition-colors flex items-center gap-2"
+                                  >
+                                    {currentUser.name}
+                                    <i className="fa-solid fa-pen text-[10px] text-zinc-600"></i>
+                                  </p>
+                                )}
                             </div>
                             <div className="space-y-2">
                                 <p className="text-[9px] text-zinc-600 uppercase tracking-widest">Studio Email</p>
