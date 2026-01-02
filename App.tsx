@@ -85,6 +85,23 @@ export default function App() {
   const [editingName, setEditingName] = useState('');
   const [editingProfileName, setEditingProfileName] = useState(false);
   const [profileNameValue, setProfileNameValue] = useState('');
+
+  // Close account menu when clicking outside
+  useEffect(() => {
+    if (!showAccountMenu) return;
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('[data-account-menu]')) {
+        setShowAccountMenu(false);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [showAccountMenu]);
   const [isOffline, setIsOffline] = useState(!isOnline());
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pendingSyncCount, setPendingSyncCount] = useState(0);
@@ -254,6 +271,7 @@ export default function App() {
         
         <div className="relative">
             <button 
+                data-account-menu
                 onClick={() => setShowAccountMenu(!showAccountMenu)}
                 className="flex items-center gap-4 bg-white/5 hover:bg-white/10 border border-white/10 px-6 py-2.5 rounded-full transition-all active:scale-95"
             >
