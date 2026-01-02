@@ -277,6 +277,10 @@ export default function App() {
                             <i className="fa-solid fa-arrow-right-from-bracket"></i> Exit Studio
                         </button>
                     </div>
+                    <div className="border-t border-white/5 pt-4 mt-4 flex gap-4 justify-center">
+                        <a href="/privacy.html" target="_blank" className="text-[8px] text-zinc-500 uppercase tracking-widest hover:text-white transition-colors">Privacy</a>
+                        <a href="/terms.html" target="_blank" className="text-[8px] text-zinc-500 uppercase tracking-widest hover:text-white transition-colors">Terms</a>
+                    </div>
                 </div>
             )}
         </div>
