@@ -515,8 +515,7 @@ export default function App() {
                                     onChange={(e) => setProfileNameValue(e.target.value)}
                                     onBlur={async () => {
                                       if (profileNameValue.trim() && currentUser) {
-                                        const { supabase } = await import('./services/supabaseService');
-                                        await supabase.from('profiles').update({ name: profileNameValue.trim() }).eq('id', currentUser.id);
+                                        await authService.updateProfile({ name: profileNameValue.trim() });
                                         setCurrentUser({...currentUser, name: profileNameValue.trim()});
                                       }
                                       setEditingProfileName(false);
