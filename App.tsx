@@ -1289,7 +1289,22 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                <>
                  <button onClick={() => setRenderIdx(-1)} className={`h-full aspect-video border shrink-0 overflow-hidden rounded-xl transition-all ${renderIdx === -1 ? 'border-white scale-105 z-10 shadow-2xl' : 'border-white/10 opacity-30 hover:opacity-100'}`}><img src={project.imageUrl} className="w-full h-full object-cover grayscale" /></button>
                  {project.generatedRenderings?.map((r:any, i:number) => (
-                    <button key={i} onClick={() => setRenderIdx(i)} className={`h-full aspect-video border shrink-0 overflow-hidden rounded-xl transition-all ${renderIdx === i ? 'border-white scale-105 z-10 shadow-2xl' : 'border-white/10 opacity-30 hover:opacity-100'}`}><img src={r} className="w-full h-full object-cover" /></button>
+                    <div key={i} className={`h-full aspect-video border shrink-0 overflow-hidden rounded-xl transition-all relative group/thumb ${renderIdx === i ? 'border-white scale-105 z-10 shadow-2xl' : 'border-white/10 opacity-30 hover:opacity-100'}`}>
+                      <img onClick={() => setRenderIdx(i)} src={r} className="w-full h-full object-cover cursor-pointer" />
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!confirm('Delete this render?')) return;
+                          const newRenders = project.generatedRenderings.filter((_:any, idx:number) => idx !== i);
+                          onUpdateProject({ ...project, generatedRenderings: newRenders }, 0);
+                          if (renderIdx === i) setRenderIdx(newRenders.length > 0 ? newRenders.length - 1 : -1);
+                          else if (renderIdx > i) setRenderIdx(renderIdx - 1);
+                        }}
+                        className="absolute top-1 right-1 w-6 h-6 bg-black/80 rounded-full flex items-center justify-center opacity-0 group-hover/thumb:opacity-100 hover:bg-red-600 transition-all"
+                      >
+                        <i className="fa-solid fa-xmark text-[8px]"></i>
+                      </button>
+                    </div>
                  ))}
                </>
              )}
