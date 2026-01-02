@@ -16,6 +16,7 @@ import { CompareView } from './components/CompareView';
 import { SpecSheetModal } from './components/SpecSheetModal';
 import { ShareModal } from './components/ShareModal';
 import { BuilderDashboard } from './components/BuilderDashboard';
+import { generateProjectPDF } from './services/pdfService';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { PricingSection } from './components/PricingSection';
 
@@ -1255,6 +1256,15 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                           title="Material Specs"
                         >
                           <i className="fa-solid fa-list-check"></i>
+                        </button>
+                      )}
+                      {renderIdx >= 0 && (
+                        <button
+                          onClick={() => generateProjectPDF(project, style)}
+                          className="w-12 h-12 bg-black/80 backdrop-blur rounded-full flex items-center justify-center text-white hover:bg-red-500 hover:text-white transition-all"
+                          title="Export PDF"
+                        >
+                          <i className="fa-solid fa-file-pdf"></i>
                         </button>
                       )}
                     </div>
