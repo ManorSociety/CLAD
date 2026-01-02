@@ -584,6 +584,73 @@ export default function App() {
                     </section>
                 </div>
 
+                {/* Tutorial Section */}
+                <section className="bg-zinc-900 border border-white/5 p-12 rounded-[2.5rem] space-y-8">
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-amber-500">How to Use CLAD</h3>
+                    
+                    <div className="space-y-6">
+                        <div className="flex gap-4">
+                            <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
+                                <span className="text-amber-500 text-[10px] font-black">1</span>
+                            </div>
+                            <div>
+                                <p className="text-white text-sm font-medium mb-1">Upload Your Photo</p>
+                                <p className="text-zinc-500 text-[11px] leading-relaxed">Click "+ New Vision" and upload a photo of your home's exterior. For best results, use a clear front-facing photo in good lighting.</p>
+                            </div>
+                        </div>
+                        
+                        <div className="flex gap-4">
+                            <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
+                                <span className="text-amber-500 text-[10px] font-black">2</span>
+                            </div>
+                            <div>
+                                <p className="text-white text-sm font-medium mb-1">Choose Your Style</p>
+                                <p className="text-zinc-500 text-[11px] leading-relaxed">Browse 31 architectural styles from Modern Farmhouse to Mediterranean. Each style has unique DNA that transforms your home's finishes while preserving its structure.</p>
+                            </div>
+                        </div>
+                        
+                        <div className="flex gap-4">
+                            <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
+                                <span className="text-amber-500 text-[10px] font-black">3</span>
+                            </div>
+                            <div>
+                                <p className="text-white text-sm font-medium mb-1">Customize Settings</p>
+                                <p className="text-zinc-500 text-[11px] leading-relaxed">Adjust lighting (Golden Hour, Overcast, etc.), camera angle, site context, and canvas format. Add custom instructions for specific changes.</p>
+                            </div>
+                        </div>
+                        
+                        <div className="flex gap-4">
+                            <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
+                                <span className="text-amber-500 text-[10px] font-black">4</span>
+                            </div>
+                            <div>
+                                <p className="text-white text-sm font-medium mb-1">Execute Vision</p>
+                                <p className="text-zinc-500 text-[11px] leading-relaxed">Click "Execute Vision" to generate your rendering. Each render uses 1 credit. Video renders (VEO) use 5 credits.</p>
+                            </div>
+                        </div>
+                        
+                        <div className="flex gap-4">
+                            <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
+                                <span className="text-amber-500 text-[10px] font-black">5</span>
+                            </div>
+                            <div>
+                                <p className="text-white text-sm font-medium mb-1">Save & Share</p>
+                                <p className="text-zinc-500 text-[11px] leading-relaxed">Download your renders, share via email, or compare before/after. All projects are saved to your studio for future editing.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div className="pt-4 border-t border-white/5">
+                        <p className="text-zinc-600 text-[10px] uppercase tracking-widest mb-3">Pro Tips</p>
+                        <ul className="space-y-2 text-zinc-500 text-[11px]">
+                            <li>• Use reference images to guide specific material choices</li>
+                            <li>• Tap the CLAD logo to refresh your projects</li>
+                            <li>• Click project names to rename them</li>
+                            <li>• Higher quality renders take longer but produce better results</li>
+                        </ul>
+                    </div>
+                </section>
+
                 <div className="pt-12 flex justify-center">
                     <button onClick={() => setView(AppView.DASHBOARD)} className="text-[10px] font-black uppercase tracking-[0.5em] text-zinc-600 hover:text-white transition-colors flex items-center gap-4">
                         <i className="fa-solid fa-arrow-left"></i> Return to Studio
