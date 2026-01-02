@@ -261,7 +261,9 @@ export default function App() {
             </button>
 
             {showAccountMenu && (
-                <div className="absolute top-full right-0 mt-4 w-64 bg-zinc-900/95 backdrop-blur-3xl border border-white/10 rounded-[1.5rem] shadow-[0_20px_60px_rgba(0,0,0,0.8)] p-4 animate-in fade-in slide-in-from-top-4 duration-300">
+                <>
+                <div className="fixed inset-0 z-[1999]" onClick={() => setShowAccountMenu(false)}></div>
+                <div className="absolute top-full right-0 mt-4 w-64 bg-zinc-900/95 backdrop-blur-3xl border border-white/10 rounded-[1.5rem] shadow-[0_20px_60px_rgba(0,0,0,0.8)] p-4 animate-in fade-in slide-in-from-top-4 duration-300 z-[2000]">
                     <div className="p-4 border-b border-white/5 mb-4">
                         <p className="text-[10px] font-black text-white uppercase tracking-widest truncate">{currentUser?.name}</p>
                         <p className="text-[9px] text-zinc-500 uppercase tracking-widest mt-1">{usage.tier}</p>
@@ -282,6 +284,7 @@ export default function App() {
                         <a href="/terms.html" target="_blank" className="text-[8px] text-zinc-500 uppercase tracking-widest hover:text-white transition-colors">Terms</a>
                     </div>
                 </div>
+                </>
             )}
         </div>
     </header>
