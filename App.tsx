@@ -1314,6 +1314,51 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
           </div>
           
           {/* Mobile Action Bar - only shows on mobile */}
+          {viewMode === 'CINEMATIC' && activeVideo && (
+            <div className="md:hidden w-full py-4 px-6 bg-black border-t border-white/5 flex justify-center gap-4">
+              <button 
+                onClick={async () => {
+                  if (navigator.share) {
+                    try {
+                      const response = await fetch(activeVideo);
+                      const blob = await response.blob();
+                      const file = new File([blob], `${project.name.toLowerCase().replace(/\s+/g, '-')}-video.mp4`, { type: 'video/mp4' });
+                      await navigator.share({ files: [file], title: 'CLAD Video' });
+                    } catch (err) {
+                      window.open(activeVideo, '_blank');
+                    }
+                  } else {
+                    const link = document.createElement('a');
+                    link.href = activeVideo;
+                    link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}-video.mp4`;
+                    link.click();
+                  }
+                }}
+                className="w-11 h-11 bg-zinc-900 border border-white/10 rounded-full flex items-center justify-center text-white active:bg-amber-500 transition-all"
+                title="Download Video"
+              >
+                <i className="fa-solid fa-download text-sm"></i>
+              </button>
+              
+              <button 
+                onClick={async () => {
+                  if (navigator.share) {
+                    try {
+                      const response = await fetch(activeVideo);
+                      const blob = await response.blob();
+                      const file = new File([blob], `${project.name.toLowerCase().replace(/\s+/g, "-")}-video.mp4`, { type: "video/mp4" });
+                      await navigator.share({ files: [file], title: "CLAD Video" });
+                    } catch (err) { console.log("Share cancelled"); }
+                  } else { setShowShare(true); }
+                }}
+                className="w-11 h-11 bg-zinc-900 border border-white/10 rounded-full flex items-center justify-center text-white active:bg-amber-500 transition-all"
+                title="Share Video"
+              >
+                <i className="fa-solid fa-share-nodes text-sm"></i>
+              </button>
+            </div>
+          )}
+          
           {viewMode === '3D' && activeImage && (
             <div className="md:hidden w-full py-4 px-6 bg-black border-t border-white/5 flex justify-center gap-4">
               <button 
