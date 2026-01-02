@@ -265,11 +265,11 @@ export default function App() {
             {showAccountMenu && (
                 <>
                 <div 
-                  className="fixed inset-0 z-[1999]" 
-                  style={{ backgroundColor: 'rgba(0,0,0,0.01)', cursor: 'pointer' }}
+                  className="fixed inset-0 bg-black/20"
+                  style={{ zIndex: 9998 }}
                   onClick={() => setShowAccountMenu(false)}
-                ></div>
-                <div className="absolute top-full right-0 mt-4 w-64 bg-zinc-900/95 backdrop-blur-3xl border border-white/10 rounded-[1.5rem] shadow-[0_20px_60px_rgba(0,0,0,0.8)] p-4 animate-in fade-in slide-in-from-top-4 duration-300 z-[2000]">
+                />
+                <div className="absolute top-full right-0 mt-4 w-64 bg-zinc-900/95 backdrop-blur-3xl border border-white/10 rounded-[1.5rem] shadow-[0_20px_60px_rgba(0,0,0,0.8)] p-4 animate-in fade-in slide-in-from-top-4 duration-300" style={{ zIndex: 9999 }}>
                     <div className="p-4 border-b border-white/5 mb-4">
                         <p className="text-[10px] font-black text-white uppercase tracking-widest truncate">{currentUser?.name}</p>
                         <p className="text-[9px] text-zinc-500 uppercase tracking-widest mt-1">{usage.tier}</p>
