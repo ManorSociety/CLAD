@@ -278,7 +278,7 @@ export default function App() {
                             <i className="fa-solid fa-vault text-zinc-500"></i> Upgrade Archive
                         </button>
                         <button onClick={handleLogout} className="w-full text-left p-4 hover:bg-red-500/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-red-500 transition-all flex items-center gap-4">
-                            <i className="fa-solid fa-arrow-right-from-bracket"></i> Exit Studio
+                            <i className="fa-solid fa-arrow-right-from-bracket"></i> Logout
                         </button>
                     </div>
                     <div className="border-t border-white/5 pt-4 mt-4 flex gap-4 justify-center">
@@ -496,7 +496,7 @@ export default function App() {
 
       {view === AppView.ACCOUNT && currentUser && (
           <div className="flex-1 flex flex-col p-6 md:p-16 pt-32 overflow-y-auto bg-black scrollbar-hide">
-            <div className="max-w-4xl mx-auto w-full space-y-20">
+            <div className="max-w-4xl mx-auto w-full space-y-20 pb-32">
                 <header className="space-y-4">
                     <h2 className="font-serif-display text-7xl tracking-tighter uppercase">Account</h2>
                     <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.8em]">Architectural Profile & Archive Status</p>
