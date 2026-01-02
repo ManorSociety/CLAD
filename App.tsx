@@ -27,7 +27,7 @@ const LoadingOverlay = ({ message, variant = 'default' }: { message: string, var
       </div>
     </div>
     <div className="space-y-6 text-center max-w-sm px-8">
-      {variant === 'cinematic' && <p className="text-amber-500 text-[10px] font-black uppercase tracking-[0.5em] mb-2 text-center">VEO CINEMATIC CORE ENGAGED</p>}
+      {variant === 'cinematic' && <p className="text-amber-500 text-[10px] font-black uppercase tracking-[0.5em] mb-2 text-center">CINEMATIC CORE ENGAGED</p>}
       <p className="text-white text-[11px] font-black uppercase tracking-[1.2em] leading-relaxed pl-[1.2em] text-center">{message}</p>
       <div className="w-48 h-[1px] bg-white/10 mx-auto overflow-hidden relative mt-4">
         <div className={`absolute inset-0 h-full ${variant === 'cinematic' ? 'bg-amber-500' : 'bg-white'} animate-[loading-bar_2s_infinite_ease-in-out]`}></div>
@@ -624,8 +624,8 @@ export default function App() {
                                 <span className="text-amber-500 text-[10px] font-black">4</span>
                             </div>
                             <div>
-                                <p className="text-white text-sm font-medium mb-1">Execute Vision</p>
-                                <p className="text-zinc-500 text-[11px] leading-relaxed">Click "Execute Vision" to generate your rendering. Each render uses 1 credit. Video renders (VEO) use 5 credits.</p>
+                                <p className="text-white text-sm font-medium mb-1">Magic Pencil & Materials</p>
+                                <p className="text-zinc-500 text-[11px] leading-relaxed">Use Magic Pencil to extract colors from photos. Select specific materials for siding, roofing, stone, and trim. Upload reference images to guide material choices.</p>
                             </div>
                         </div>
                         
@@ -634,8 +634,18 @@ export default function App() {
                                 <span className="text-amber-500 text-[10px] font-black">5</span>
                             </div>
                             <div>
+                                <p className="text-white text-sm font-medium mb-1">Execute Vision</p>
+                                <p className="text-zinc-500 text-[11px] leading-relaxed">Click "Execute Vision" to generate your rendering. Each image render uses 1 credit. Toggle to Cinematic mode for video renders (5 credits).</p>
+                            </div>
+                        </div>
+                        
+                        <div className="flex gap-4">
+                            <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
+                                <span className="text-amber-500 text-[10px] font-black">6</span>
+                            </div>
+                            <div>
                                 <p className="text-white text-sm font-medium mb-1">Save & Share</p>
-                                <p className="text-zinc-500 text-[11px] leading-relaxed">Download your renders, share via email, or compare before/after. All projects are saved to your studio for future editing.</p>
+                                <p className="text-zinc-500 text-[11px] leading-relaxed">Download renders, share via email, or compare before/after with the Compare tool. All projects auto-save to your studio.</p>
                             </div>
                         </div>
                     </div>
@@ -644,9 +654,10 @@ export default function App() {
                         <p className="text-zinc-600 text-[10px] uppercase tracking-widest mb-3">Pro Tips</p>
                         <ul className="space-y-2 text-zinc-500 text-[11px]">
                             <li>• Use reference images to guide specific material choices</li>
-                            <li>• Tap the CLAD logo to refresh your projects</li>
-                            <li>• Click project names to rename them</li>
-                            <li>• Higher quality renders take longer but produce better results</li>
+                            <li>• Tap the CLAD logo to refresh and sync your projects</li>
+                            <li>• Click project names on dashboard to rename them</li>
+                            <li>• Use the search bar to quickly find projects</li>
+                            <li>• Cinematic videos create stunning fly-around animations</li>
                         </ul>
                     </div>
                 </section>
@@ -890,7 +901,7 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
   const [angle, setAngle] = useState(project.cameraAngle || CameraAngle.FRONT);
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>(project.preferredAspectRatio || "16:9");
   const [magicPencil, setMagicPencil] = useState(project.customDirectives || '');
-  const [viewMode, setViewMode] = useState<'3D' | 'VEO'>('3D');
+  const [viewMode, setViewMode] = useState<'3D' | 'CINEMATIC'>('3D');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isCinematic, setIsCinematic] = useState(false);
   const [refImages, setRefImages] = useState<string[]>(project.referenceImages || []);
@@ -947,7 +958,7 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
       const newVideos = [...(project.generatedVideos || []), videoUrl];
       onUpdateProject({ ...project, generatedVideos: newVideos, customDirectives: magicPencil }, 5);
       setVideoIdx(newVideos.length - 1);
-      setViewMode('VEO');
+      setViewMode('CINEMATIC');
       setShowSidebar(false);
     } catch (e: any) { 
         const msg = formatGeminiError(e);
@@ -977,7 +988,7 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
     ? (renderIdx >= 0 ? project.generatedRenderings[renderIdx] : project.imageUrl)
     : null;
 
-  const activeVideo = viewMode === 'VEO' && videoIdx >= 0 ? project.generatedVideos[videoIdx] : null;
+  const activeVideo = viewMode === 'CINEMATIC' && videoIdx >= 0 ? project.generatedVideos[videoIdx] : null;
 
   return (
     <div className="fixed inset-0 bg-black flex flex-col z-[1500] overflow-hidden">
@@ -989,15 +1000,15 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
             <button onClick={onBack} className="text-[11px] font-black uppercase text-zinc-500 hover:text-white transition-colors tracking-[0.4em] flex-shrink-0">BACK</button>
             <div className="flex bg-zinc-900 p-1 rounded-full border border-white/10 flex-shrink-0 overflow-hidden">
                 <button onClick={() => setViewMode('3D')} className={`px-4 md:px-6 py-2 text-[9px] font-black uppercase tracking-widest rounded-full transition-all ${viewMode === '3D' ? 'bg-white text-black' : 'text-zinc-500 hover:text-white'}`}>3D</button>
-                {renderMode === "EXTERIOR" && <button onClick={() => setViewMode('VEO')} className={`px-4 md:px-6 py-2 text-[9px] font-black uppercase tracking-widest rounded-full transition-all ${viewMode === 'VEO' ? 'bg-white text-black' : 'text-zinc-500 hover:text-white'}`}>VEO</button>}
+                {renderMode === "EXTERIOR" && <button onClick={() => setViewMode('CINEMATIC')} className={`px-4 md:px-6 py-2 text-[9px] font-black uppercase tracking-widest rounded-full transition-all ${viewMode === 'CINEMATIC' ? 'bg-white text-black' : 'text-zinc-500 hover:text-white'}`}>Cinematic</button>}
             </div>
             <button onClick={() => setShowSidebar(!showSidebar)} className="w-10 h-10 flex items-center justify-center border border-white/10 rounded-full text-[10px] font-black hover:border-white transition-all flex-shrink-0">
                 <i className={`fa-solid ${showSidebar ? 'fa-xmark' : 'fa-sliders'}`}></i>
             </button>
         </div>
         <div className="flex gap-4 items-center flex-shrink-0 ml-4 overflow-hidden">
-            {viewMode === 'VEO' && renderMode === "EXTERIOR" && (
-                <button onClick={handleCinematic} className="hidden lg:block px-6 py-3 bg-amber-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-amber-500 transition-all rounded-sm">GEN VEO</button>
+            {viewMode === 'CINEMATIC' && renderMode === "EXTERIOR" && (
+                <button onClick={handleCinematic} className="hidden lg:block px-6 py-3 bg-amber-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-amber-500 transition-all rounded-sm">GEN CINEMATIC</button>
             )}
             <button onClick={handleExecute} className="px-4 py-2 sm:px-6 sm:py-3 bg-white text-black text-[7px] sm:text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-xl rounded-sm leading-tight text-center flex flex-col items-center justify-center min-w-[90px] sm:min-w-[120px]">
               <span>EXECUTE</span>
@@ -1122,7 +1133,7 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
         <main className="flex-1 flex flex-col items-center justify-center transition-all duration-1000 relative overflow-hidden bg-[#050505]">
           <div className="flex-1 w-full relative flex items-center justify-center overflow-hidden p-4">
             <div className={`transition-all duration-700 flex items-center justify-center ${aspectRatio === "9:16" ? 'h-full aspect-[9/16]' : 'w-full aspect-[16/9]'} max-w-full max-h-full relative group`}>
-                {viewMode === 'VEO' && activeVideo ? (
+                {viewMode === 'CINEMATIC' && activeVideo ? (
                   <>
                     <video 
                       src={activeVideo} 
@@ -1254,8 +1265,8 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                             <i className="fa-solid fa-film text-amber-500 text-6xl mb-8 opacity-20"></i>
                             <h3 className="text-zinc-400 text-3xl font-serif-display uppercase mb-4">Studio Branch Empty</h3>
                             <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.4em] mb-12">No high-fidelity {viewMode} assets detected.</p>
-                            {viewMode === 'VEO' && renderMode === "EXTERIOR" && (
-                                <button onClick={handleCinematic} className="w-full py-6 bg-amber-600 text-white text-[11px] font-black uppercase tracking-[0.4em] active:scale-95 transition-all rounded-full shadow-2xl">RENDER CINEMATIC VEO</button>
+                            {viewMode === 'CINEMATIC' && renderMode === "EXTERIOR" && (
+                                <button onClick={handleCinematic} className="w-full py-6 bg-amber-600 text-white text-[11px] font-black uppercase tracking-[0.4em] active:scale-95 transition-all rounded-full shadow-2xl">RENDER CINEMATIC</button>
                             )}
                         </div>
                     </div>
@@ -1272,7 +1283,7 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                  ))}
                </>
              )}
-             {viewMode === 'VEO' && project.generatedVideos?.map((v:any, i:number) => (
+             {viewMode === 'CINEMATIC' && project.generatedVideos?.map((v:any, i:number) => (
                 <button key={i} onClick={() => setVideoIdx(i)} className={`h-full aspect-video border shrink-0 overflow-hidden rounded-xl transition-all ${videoIdx === i ? 'border-amber-500 scale-105 z-10 shadow-2xl shadow-amber-500/30' : 'border-amber-500/10 opacity-30 hover:opacity-100'}`}><video src={v} className="w-full h-full object-cover" /></button>
              ))}
           </div>
