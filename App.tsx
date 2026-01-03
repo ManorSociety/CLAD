@@ -919,6 +919,7 @@ const EditorView = ({ project, userTier, user, onBack, onUpdateProject, onUpgrad
   const [hdVersions, setHdVersions] = useState<{[key: number]: string}>(project.hdVersions || {});
   const [hdVideoVersions, setHdVideoVersions] = useState<{[key: number]: string}>(project.hdVideoVersions || {});
   const [isUpscaling, setIsUpscaling] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const tierValue = (t: SubscriptionTier) => {
       if (t === SubscriptionTier.ENTERPRISE) return 3;
@@ -1002,6 +1003,7 @@ const EditorView = ({ project, userTier, user, onBack, onUpdateProject, onUpgrad
       {isProcessing && <LoadingOverlay message="CALIBRATING ARCHITECTURAL LIGHT" />}
       {isCinematic && <LoadingOverlay message="ORBITING CINEMATIC CORE" variant="cinematic" />}
       {isUpscaling && <LoadingOverlay message="ENHANCING TO 4K RESOLUTION" submessage="Keep screen on • This may take several minutes" />}
+      {isDownloading && <LoadingOverlay message="PREPARING DOWNLOAD" submessage="Fetching high-resolution file..." />}
       
       <header className="h-32 pt-10 md:pt-0 md:h-24 border-b border-white/5 px-4 md:px-12 flex items-center justify-between bg-black shrink-0 relative z-[1600]">
         <div className="flex items-center gap-4 md:gap-8 flex-shrink-0 min-w-0">
@@ -1157,6 +1159,11 @@ const EditorView = ({ project, userTier, user, onBack, onUpdateProject, onUpgrad
                         <i className="fa-solid fa-film text-[10px]"></i> 4K VIDEO
                       </div>
                     )}
+                    {hdVideoVersions[project.generatedVideos.indexOf(activeVideo)] && (
+                      <div className="absolute top-4 left-4 bg-amber-600 text-white text-xs font-bold px-2 py-1 rounded flex items-center gap-1">
+                        <i className="fa-solid fa-film text-[10px]"></i> 4K VIDEO
+                      </div>
+                    )}
                     <div className="absolute top-4 right-4 hidden md:flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button 
                         onClick={async () => {
@@ -1264,6 +1271,7 @@ const EditorView = ({ project, userTier, user, onBack, onUpdateProject, onUpgrad
                           const ext = hdVersions[renderIdx] ? 'png' : 'jpg';
                           const suffix = hdVersions[renderIdx] ? '-4K' : '';
                           const filename = `${project.name.toLowerCase().replace(/\s+/g, '-')}${suffix}-${Date.now()}.${ext}`;
+                          setIsDownloading(true);
                           try {
                             const response = await fetch(imageToDownload);
                             const blob = await response.blob();
@@ -1278,6 +1286,8 @@ const EditorView = ({ project, userTier, user, onBack, onUpdateProject, onUpgrad
                           } catch (err) {
                             console.error('Download failed:', err);
                             window.open(imageToDownload, '_blank');
+                          } finally {
+                            setIsDownloading(false);
                           }
                         }}
                         className="w-12 h-12 bg-black/80 backdrop-blur rounded-full flex items-center justify-center text-white hover:bg-white hover:text-black transition-all"
