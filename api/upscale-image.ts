@@ -26,17 +26,14 @@ export default async function handler(req: any, res: any) {
 
     console.log('Starting upscale for:', imageUrl);
 
-    // Use the latest Real-ESRGAN model (no version hash - uses latest)
-    const output = await replicate.run(
-      "nightmareai/real-esrgan:42fed1c4974146d4d2414e2be2c5277c7fcf05fcc3a73abf41610695738c1d7b",
-      {
-        input: {
-          image: imageUrl,
-          scale: 4,
-          face_enhance: false
-        }
+    // Use model without version hash - Replicate will use latest
+    const output = await replicate.run("nightmareai/real-esrgan", {
+      input: {
+        image: imageUrl,
+        scale: 4,
+        face_enhance: false
       }
-    );
+    });
 
     const upscaledUrl = output as string;
     console.log('Replicate returned:', upscaledUrl);

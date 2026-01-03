@@ -26,16 +26,12 @@ export default async function handler(req: any, res: any) {
 
     console.log('Starting video upscale for:', videoUrl);
 
-    // Use video-retaliate model for video upscaling
-    const output = await replicate.run(
-      "lucataco/real-esrgan-video:c23768236472f7397be427bed9eb1c3426306999ceac3ba715c94f5227112a1c",
-      {
-        input: {
-          video_path: videoUrl,
-          scale: 4
-        }
+    // Use runwayml/upscale-v1 for video upscaling
+    const output = await replicate.run("runwayml/upscale-v1", {
+      input: {
+        video: videoUrl
       }
-    );
+    });
 
     // Handle different output formats
     let upscaledUrl: string;
