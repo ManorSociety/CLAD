@@ -1,8 +1,6 @@
 import Replicate from 'replicate';
 
-export const config = {
-  maxDuration: 300, // 5 minutes for video
-};
+export const config = { maxDuration: 300 };
 
 export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {
@@ -10,9 +8,9 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    const { video } = req.body;
-    
-    if (!video) {
+    const { videoUrl } = req.body;
+
+    if (!videoUrl) {
       return res.status(400).json({ message: 'Video URL is required' });
     }
 
@@ -20,16 +18,19 @@ export default async function handler(req: any, res: any) {
       auth: process.env.REPLICATE_API_TOKEN,
     });
 
-    const output = await replicate.run("runwayml/upscale-v1", {
-      input: {
-        video: video
+    const output = await replicate.run(
+      "lucataco/real-esrgan-video:c23768236472f7397be427bed9eb1c3426306999ceac3ba715c94f5227112a1c",
+      {
+        input: {
+          video: videoUrl,
+          scale: 4
+        }
       }
-    });
+    );
 
-    // output is a FileOutput object, get the URL
-    const url = typeof output === 'string' ? output : (output as any).url?.() || output;
-
+    const url = typeof output === 'string' ? output : (output as any).url?.() || String(output);
     return res.status(200).json({ url });
+
   } catch (error: any) {
     console.error('Video upscale error:', error);
     return res.status(500).json({ message: error.message || 'Video upscale failed' });
