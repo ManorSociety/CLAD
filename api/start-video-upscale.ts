@@ -21,17 +21,16 @@ export default async function handler(req: any, res: any) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
-    // Start Replicate job with webhook
     const webhookUrl = `https://www.cladrender.com/api/webhook-video-complete`;
     
-    const response = await fetch('https://api.replicate.com/v1/predictions', {
+    // Use the models endpoint for official models
+    const response = await fetch('https://api.replicate.com/v1/models/runwayml/upscale-v1/predictions', {
       method: 'POST',
       headers: {
         'Authorization': `Token ${process.env.REPLICATE_API_TOKEN}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "runwayml/upscale-v1",
         input: { video },
         webhook: webhookUrl,
         webhook_events_filter: ["completed"]
