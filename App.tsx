@@ -1451,7 +1451,7 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                     const email = prompt('4K Video Export (5 credits)\n\nEnter your email to receive the download link when ready (2-4 minutes):', user?.email || '');
                     if (!email) return;
                     if (!email.includes('@')) { alert('Please enter a valid email'); return; }
-                    if (!confirm(`Send 4K video to ${email}?\n\nThis uses 5 credits.`)) return;
+                    if (!confirm('Send 4K video to ' + email + '?\n\nThis uses 5 credits.')) return;
                     
                     try {
                       const response = await fetch('/api/start-video-upscale', {
