@@ -914,6 +914,8 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
   
   const [renderIdx, setRenderIdx] = useState(project.generatedRenderings?.length > 0 ? project.generatedRenderings.length - 1 : -1);
   const [videoIdx, setVideoIdx] = useState(project.generatedVideos?.length > 0 ? project.generatedVideos.length - 1 : -1);
+  const [hdVersions, setHdVersions] = useState<{[key: number]: string}>(project.hdVersions || {});
+  const [isUpscaling, setIsUpscaling] = useState(false);
 
   const tierValue = (t: SubscriptionTier) => {
       if (t === SubscriptionTier.ENTERPRISE) return 3;
@@ -996,6 +998,8 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
     <div className="fixed inset-0 bg-black flex flex-col z-[1500] overflow-hidden">
       {isProcessing && <LoadingOverlay message="CALIBRATING ARCHITECTURAL LIGHT" />}
       {isCinematic && <LoadingOverlay message="ORBITING CINEMATIC CORE" variant="cinematic" />}
+      {isUpscaling && <LoadingOverlay message="ENHANCING TO 4K RESOLUTION" />}
+      {isUpscaling && <LoadingOverlay message="ENHANCING TO 4K RESOLUTION" />}
       
       <header className="h-32 pt-10 md:pt-0 md:h-24 border-b border-white/5 px-4 md:px-12 flex items-center justify-between bg-black shrink-0 relative z-[1600]">
         <div className="flex items-center gap-4 md:gap-8 flex-shrink-0 min-w-0">
@@ -1188,6 +1192,30 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                       >
                         <i className="fa-solid fa-share-nodes"></i>
                       </button>
+                      {(userTier === 'PRO' || userTier === 'ENTERPRISE') && creditsAvailable >= 5 && (
+                        <button
+                          onClick={async () => {
+                            if (!confirm('Upscale video to 4K? This uses 5 credits and may take 1-2 minutes.')) return;
+                            setIsUpscaling(true);
+                            try {
+                              const hdUrl = await upscaleVideo(activeVideo);
+                              const link = document.createElement('a');
+                              link.href = hdUrl;
+                              link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}-4K-video-${Date.now()}.mp4`;
+                              link.click();
+                              onUpdateProject(project, 5);
+                            } catch (err: any) {
+                              alert(err.message || '4K video export failed');
+                            } finally {
+                              setIsUpscaling(false);
+                            }
+                          }}
+                          className="w-12 h-12 bg-black/80 backdrop-blur rounded-full flex items-center justify-center text-amber-500 border border-amber-500/50 hover:bg-amber-500 hover:text-black transition-all"
+                          title="4K Video (5 credits)"
+                        >
+                          <i className="fa-solid fa-film"></i>
+                        </button>
+                      )}
                     </div>
                   </>
                 ) : activeImage ? (
@@ -1268,35 +1296,50 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                           <i className="fa-solid fa-file-pdf"></i>
                         </button>
                       )}
-                      {renderIdx >= 0 && creditsAvailable >= 2 && (
+                      {renderIdx >= 0 && (
                         <button
                           onClick={async () => {
+                            // If already have HD version, just download it
+                            if (hdVersions[renderIdx]) {
+                              const link = document.createElement('a');
+                              link.href = hdVersions[renderIdx];
+                              link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}-4K-${Date.now()}.png`;
+                              link.click();
+                              return;
+                            }
+                            
+                            if (creditsAvailable < 2) {
+                              alert('You need at least 2 credits for 4K export');
+                              onTopUp();
+                              return;
+                            }
+                            
                             if (!confirm('Upscale to 4K HD? This uses 2 credits.')) return;
+                            
+                            setIsUpscaling(true);
                             try {
-                              const loadingEl = document.createElement('div');
-                              loadingEl.className = 'fixed inset-0 z-[3000] bg-black/90 flex items-center justify-center';
-                              loadingEl.innerHTML = '<div class="text-center"><div class="w-16 h-16 border-t-2 border-white rounded-full animate-spin mb-4"></div><p class="text-white text-[10px] uppercase tracking-widest">Enhancing to 4K...</p></div>';
-                              document.body.appendChild(loadingEl);
-                              
                               const hdUrl = await upscaleImage(activeImage);
-                              document.body.removeChild(loadingEl);
+                              
+                              // Save HD version
+                              const newHdVersions = { ...hdVersions, [renderIdx]: hdUrl };
+                              setHdVersions(newHdVersions);
+                              onUpdateProject({ ...project, hdVersions: newHdVersions }, 2);
                               
                               // Download the HD image
                               const link = document.createElement('a');
                               link.href = hdUrl;
                               link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}-4K-${Date.now()}.png`;
                               link.click();
-                              
-                              // Deduct credits
-                              onUpdateProject(project, 2);
                             } catch (err: any) {
                               alert(err.message || 'HD export failed');
+                            } finally {
+                              setIsUpscaling(false);
                             }
                           }}
-                          className="w-12 h-12 bg-black/80 backdrop-blur rounded-full flex items-center justify-center text-white hover:bg-purple-500 hover:text-white transition-all"
-                          title="4K HD Export (2 credits)"
+                          className={`w-12 h-12 bg-black/80 backdrop-blur rounded-full flex items-center justify-center transition-all ${hdVersions[renderIdx] ? 'text-purple-500 border-2 border-purple-500 hover:bg-purple-500 hover:text-white' : 'text-white hover:bg-purple-500 hover:text-white'}`}
+                          title={hdVersions[renderIdx] ? "Download 4K (already upscaled)" : "4K HD Export (2 credits)"}
                         >
-                          <i className="fa-solid fa-expand"></i>
+                          <i className={`fa-solid ${hdVersions[renderIdx] ? 'fa-check' : 'fa-expand'}`}></i>
                         </button>
                       )}
                     </div>
@@ -1391,24 +1434,19 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
               {(userTier === 'PRO' || userTier === 'ENTERPRISE') && creditsAvailable >= 5 && (
                 <button
                   onClick={async () => {
-                    if (!confirm('Upscale video to 4K? This uses 5 credits.')) return;
+                    if (!confirm('Upscale video to 4K? This uses 5 credits and may take 1-2 minutes.')) return;
+                    setIsUpscaling(true);
                     try {
-                      const loadingEl = document.createElement('div');
-                      loadingEl.className = 'fixed inset-0 z-[3000] bg-black/90 flex items-center justify-center';
-                      loadingEl.innerHTML = '<div class="text-center"><div class="w-16 h-16 border-t-2 border-amber-500 rounded-full animate-spin mb-4"></div><p class="text-white text-[10px] uppercase tracking-widest">Upscaling Video to 4K...</p><p class="text-zinc-500 text-[9px] mt-2">This may take 1-2 minutes</p></div>';
-                      document.body.appendChild(loadingEl);
-                      
                       const hdUrl = await upscaleVideo(activeVideo);
-                      document.body.removeChild(loadingEl);
-                      
                       const link = document.createElement('a');
                       link.href = hdUrl;
                       link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}-4K-video-${Date.now()}.mp4`;
                       link.click();
-                      
                       onUpdateProject(project, 5);
                     } catch (err: any) {
                       alert(err.message || '4K video export failed');
+                    } finally {
+                      setIsUpscaling(false);
                     }
                   }}
                   className="w-11 h-11 bg-zinc-900 border border-amber-500/50 rounded-full flex items-center justify-center text-amber-500 active:bg-amber-500 active:text-black transition-all"
@@ -1514,33 +1552,46 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                   <i className="fa-solid fa-file-pdf text-sm"></i>
                 </button>
               )}
-              {renderIdx >= 0 && creditsAvailable >= 2 && (
+              {renderIdx >= 0 && (
                 <button
                   onClick={async () => {
+                    if (hdVersions[renderIdx]) {
+                      const link = document.createElement('a');
+                      link.href = hdVersions[renderIdx];
+                      link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}-4K-${Date.now()}.png`;
+                      link.click();
+                      return;
+                    }
+                    
+                    if (creditsAvailable < 2) {
+                      alert('You need at least 2 credits for 4K export');
+                      onTopUp();
+                      return;
+                    }
+                    
                     if (!confirm('Upscale to 4K HD? This uses 2 credits.')) return;
+                    
+                    setIsUpscaling(true);
                     try {
-                      const loadingEl = document.createElement('div');
-                      loadingEl.className = 'fixed inset-0 z-[3000] bg-black/90 flex items-center justify-center';
-                      loadingEl.innerHTML = '<div class="text-center"><div class="w-16 h-16 border-t-2 border-white rounded-full animate-spin mb-4"></div><p class="text-white text-[10px] uppercase tracking-widest">Enhancing to 4K...</p></div>';
-                      document.body.appendChild(loadingEl);
-                      
                       const hdUrl = await upscaleImage(activeImage);
-                      document.body.removeChild(loadingEl);
+                      const newHdVersions = { ...hdVersions, [renderIdx]: hdUrl };
+                      setHdVersions(newHdVersions);
+                      onUpdateProject({ ...project, hdVersions: newHdVersions }, 2);
                       
                       const link = document.createElement('a');
                       link.href = hdUrl;
                       link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}-4K-${Date.now()}.png`;
                       link.click();
-                      
-                      onUpdateProject(project, 2);
                     } catch (err: any) {
                       alert(err.message || 'HD export failed');
+                    } finally {
+                      setIsUpscaling(false);
                     }
                   }}
-                  className="w-11 h-11 bg-zinc-900 border border-white/10 rounded-full flex items-center justify-center text-white active:bg-purple-500 transition-all"
-                  title="4K HD Export"
+                  className={`w-11 h-11 bg-zinc-900 border rounded-full flex items-center justify-center transition-all ${hdVersions[renderIdx] ? 'border-purple-500 text-purple-500' : 'border-white/10 text-white'} active:bg-purple-500`}
+                  title={hdVersions[renderIdx] ? "Download 4K" : "4K HD Export"}
                 >
-                  <i className="fa-solid fa-expand text-sm"></i>
+                  <i className={`fa-solid ${hdVersions[renderIdx] ? 'fa-check' : 'fa-expand'} text-sm`}></i>
                 </button>
               )}
             </div>
