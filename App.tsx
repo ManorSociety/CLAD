@@ -1213,19 +1213,10 @@ const EditorView = ({ project, userTier, user, onBack, onUpdateProject, onUpgrad
                             if (!confirm('Upscale video to 4K? This uses 5 credits and takes 2-4 minutes.')) return;
                             setIsUpscaling(true);
                             try {
-                              const hdUrl = await upscaleVideo(activeVideo, project.id, user?.id);
-                              // Upload to Supabase storage permanently
-                              const response = await fetch(hdUrl);
-                              const blob = await response.blob();
-                              const fileName = `${user?.id || 'anon'}/${project.id}/4k-video-${videoIdx}-${Date.now()}.mp4`;
-                              const { error: uploadError } = await supabase.storage
-                                .from('renders')
-                                .upload(fileName, blob, { contentType: 'video/mp4', upsert: true });
+                              // API already uploads to Supabase and returns permanent URL
+                              const hdStorageUrl = await upscaleVideo(activeVideo, project.id, user?.id);
                               
-                              if (uploadError) throw new Error('Failed to save 4K video');
-                              
-                              const { data: urlData } = supabase.storage.from('renders').getPublicUrl(fileName);
-                              const hdStorageUrl = urlData.publicUrl;
+                              if (!hdStorageUrl) throw new Error('Failed to save 4K video');
                               
                               // Save to project - syncs across all devices
                               const newHdVideoVersions = { ...hdVideoVersions, [videoIdx]: hdStorageUrl };
