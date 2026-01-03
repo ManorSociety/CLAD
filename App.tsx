@@ -1358,7 +1358,7 @@ const EditorView = ({ project, userTier, user, onBack, onUpdateProject, onUpgrad
                             setIsUpscaling(true);
                             try {
                               // upscaleImage now returns Supabase URL directly (handles upload internally)
-                              const hdStorageUrl = await upscaleImage(activeImage, project.id);
+                              const hdStorageUrl = await upscaleImage(activeImage, project.id, user?.id);
                               
                               if (!hdStorageUrl) {
                                 throw new Error('Failed to save 4K image');
@@ -1624,7 +1624,7 @@ const EditorView = ({ project, userTier, user, onBack, onUpdateProject, onUpgrad
                     setIsUpscaling(true);
                     try {
                       // upscaleImage now returns Supabase URL directly
-                      const hdStorageUrl = await upscaleImage(activeImage, project.id);
+                      const hdStorageUrl = await upscaleImage(activeImage, project.id, user?.id);
                       
                       if (!hdStorageUrl) throw new Error('Failed to save 4K');
                       

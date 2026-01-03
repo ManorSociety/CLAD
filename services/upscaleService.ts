@@ -1,13 +1,11 @@
 // Upscale Service - Replicate for images and video
-// URL-based to avoid Vercel body size limits
+// Server handles Supabase upload to avoid CORS issues
 
-import { supabase } from './supabaseClient';
-
-export const upscaleImage = async (imageUrl: string, projectId?: string): Promise<string> => {
+export const upscaleImage = async (imageUrl: string, projectId?: string, userId?: string): Promise<string> => {
   const apiResponse = await fetch('/api/upscale-image', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ imageUrl })
+    body: JSON.stringify({ imageUrl, projectId, userId })
   });
 
   if (!apiResponse.ok) {
@@ -16,24 +14,19 @@ export const upscaleImage = async (imageUrl: string, projectId?: string): Promis
   }
 
   const data = await apiResponse.json();
-  const upscaledUrl = data.url;
-
-  if (projectId && supabase) {
-    try {
-      return await uploadToSupabase(upscaledUrl, projectId, 'image');
-    } catch (e) {
-      console.warn('Supabase upload failed, using temp URL:', e);
-      return upscaledUrl;
-    }
+  
+  if (!data.permanent) {
+    console.warn('4K image is temporary URL - may expire in ~1 hour');
   }
-  return upscaledUrl;
+  
+  return data.url;
 };
 
-export const upscaleVideo = async (videoUrl: string, projectId?: string): Promise<string> => {
+export const upscaleVideo = async (videoUrl: string, projectId?: string, userId?: string): Promise<string> => {
   const response = await fetch('/api/upscale-video', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ videoUrl })
+    body: JSON.stringify({ videoUrl, projectId, userId })
   });
 
   if (!response.ok) {
@@ -42,36 +35,5 @@ export const upscaleVideo = async (videoUrl: string, projectId?: string): Promis
   }
 
   const data = await response.json();
-  const upscaledUrl = data.url;
-
-  if (projectId && supabase) {
-    try {
-      return await uploadToSupabase(upscaledUrl, projectId, 'video');
-    } catch (e) {
-      console.warn('Supabase upload failed, using temp URL:', e);
-      return upscaledUrl;
-    }
-  }
-  return upscaledUrl;
+  return data.url;
 };
-
-async function uploadToSupabase(fileUrl: string, projectId: string, type: 'image' | 'video'): Promise<string> {
-  const response = await fetch(fileUrl);
-  if (!response.ok) throw new Error('Failed to fetch upscaled file');
-
-  const blob = await response.blob();
-  const ext = type === 'video' ? 'mp4' : 'png';
-  const filename = `${projectId}/upscaled-${type}-${Date.now()}.${ext}`;
-
-  const { error } = await supabase.storage
-    .from('renders')
-    .upload(filename, blob, {
-      contentType: type === 'video' ? 'video/mp4' : 'image/png',
-      upsert: true
-    });
-
-  if (error) throw error;
-
-  const { data: urlData } = supabase.storage.from('renders').getPublicUrl(filename);
-  return urlData.publicUrl;
-}
