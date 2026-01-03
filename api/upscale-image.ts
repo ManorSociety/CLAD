@@ -31,7 +31,17 @@ export default async function handler(req: any, res: any) {
       }
     );
 
-    return res.status(200).json({ url: output });
+    // Fetch the image from Replicate and convert to base64
+    const imageUrl = output as string;
+    const response = await fetch(imageUrl);
+    const arrayBuffer = await response.arrayBuffer();
+    const base64 = Buffer.from(arrayBuffer).toString('base64');
+    const mimeType = response.headers.get('content-type') || 'image/png';
+
+    return res.status(200).json({ 
+      base64: `data:${mimeType};base64,${base64}`,
+      url: imageUrl // Keep URL as backup
+    });
   } catch (error: any) {
     console.error('Upscale error:', error);
     return res.status(500).json({ message: error.message || 'Upscale failed' });

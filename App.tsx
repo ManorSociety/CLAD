@@ -1302,8 +1302,13 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                               setHdVersions(newHdVersions);
                               onUpdateProject({ ...project, hdVersions: newHdVersions }, 2);
                               
-                              // Just alert success - user clicks again to download
-                              alert('4K version ready! Click the button again to download.');
+                              // Download the 4K image directly from base64
+                              const link = document.createElement('a');
+                              link.href = hdUrl;
+                              link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}-4K-${Date.now()}.png`;
+                              document.body.appendChild(link);
+                              link.click();
+                              document.body.removeChild(link);
                             } catch (err: any) {
                               alert(err.message || 'HD export failed');
                             } finally {
@@ -1507,19 +1512,27 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                 <button
                   onClick={async () => {
                     if (hdVersions[renderIdx]) {
-                      try {
-                        const response = await fetch(hdVersions[renderIdx]);
-                        const blob = await response.blob();
-                        const ext = hdVersions[renderIdx].includes('.png') ? 'png' : 'jpg';
-                        const file = new File([blob], `${project.name.toLowerCase().replace(/\s+/g, '-')}-4K.${ext}`, { type: `image/${ext === 'png' ? 'png' : 'jpeg'}` });
-                        if (navigator.share && navigator.canShare({ files: [file] })) {
-                          await navigator.share({ files: [file], title: 'CLAD 4K Render' });
-                        } else {
-                          const blobUrl = URL.createObjectURL(blob);
-                          window.open(blobUrl, '_blank');
-                        }
-                      } catch (err) {
-                        window.open(hdVersions[renderIdx], '_blank');
+                      // hdVersions now stores base64 data URL
+                      const base64 = hdVersions[renderIdx];
+                      const byteString = atob(base64.split(',')[1]);
+                      const mimeType = base64.split(',')[0].split(':')[1].split(';')[0];
+                      const ab = new ArrayBuffer(byteString.length);
+                      const ia = new Uint8Array(ab);
+                      for (let i = 0; i < byteString.length; i++) {
+                        ia[i] = byteString.charCodeAt(i);
+                      }
+                      const blob = new Blob([ab], { type: mimeType });
+                      const file = new File([blob], `${project.name.toLowerCase().replace(/\s+/g, '-')}-4K.png`, { type: mimeType });
+                      
+                      if (navigator.share && navigator.canShare({ files: [file] })) {
+                        await navigator.share({ files: [file], title: 'CLAD 4K Render' });
+                      } else {
+                        const link = document.createElement('a');
+                        link.href = base64;
+                        link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}-4K.png`;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
                       }
                       return;
                     }
@@ -1539,7 +1552,13 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                       setHdVersions(newHdVersions);
                       onUpdateProject({ ...project, hdVersions: newHdVersions }, 2);
                       
-                      alert('4K version ready! Tap the button again to download.');
+                      // Download directly - hdUrl is now base64
+                      const link = document.createElement('a');
+                      link.href = hdUrl;
+                      link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}-4K-${Date.now()}.png`;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
                     } catch (err: any) {
                       alert(err.message || 'HD export failed');
                     } finally {
