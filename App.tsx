@@ -1507,15 +1507,20 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                 <button
                   onClick={async () => {
                     if (hdVersions[renderIdx]) {
-                      const response = await fetch(hdVersions[renderIdx]);
-                      const blob = await response.blob();
-                      const blobUrl = URL.createObjectURL(blob);
-                      const ext = hdVersions[renderIdx].includes('.png') ? 'png' : 'jpg';
-                      const link = document.createElement('a');
-                      link.href = blobUrl;
-                      link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}-4K-${Date.now()}.${ext}`;
-                      link.click();
-                      URL.revokeObjectURL(blobUrl);
+                      try {
+                        const response = await fetch(hdVersions[renderIdx]);
+                        const blob = await response.blob();
+                        const ext = hdVersions[renderIdx].includes('.png') ? 'png' : 'jpg';
+                        const file = new File([blob], `${project.name.toLowerCase().replace(/\s+/g, '-')}-4K.${ext}`, { type: `image/${ext === 'png' ? 'png' : 'jpeg'}` });
+                        if (navigator.share && navigator.canShare({ files: [file] })) {
+                          await navigator.share({ files: [file], title: 'CLAD 4K Render' });
+                        } else {
+                          const blobUrl = URL.createObjectURL(blob);
+                          window.open(blobUrl, '_blank');
+                        }
+                      } catch (err) {
+                        window.open(hdVersions[renderIdx], '_blank');
+                      }
                       return;
                     }
                     
@@ -1534,14 +1539,7 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                       setHdVersions(newHdVersions);
                       onUpdateProject({ ...project, hdVersions: newHdVersions }, 2);
                       
-                      const response = await fetch(hdUrl);
-                      const blob = await response.blob();
-                      const blobUrl = URL.createObjectURL(blob);
-                      const link = document.createElement('a');
-                      link.href = blobUrl;
-                      link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}-4K-${Date.now()}.png`;
-                      link.click();
-                      URL.revokeObjectURL(blobUrl);
+                      alert('4K version ready! Tap the button again to download.');
                     } catch (err: any) {
                       alert(err.message || 'HD export failed');
                     } finally {
