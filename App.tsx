@@ -1348,12 +1348,9 @@ const EditorView = ({ project, userTier, user, onBack, onUpdateProject, onUpgrad
                       {renderIdx >= 0 && (
                         <button
                           onClick={async () => {
-                            // If already have HD version, just download it
+                            // If already have HD version, just notify user
                             if (hdVersions[renderIdx]) {
-                              const link = document.createElement('a');
-                              link.href = hdVersions[renderIdx];
-                              link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}-4K-${Date.now()}.png`;
-                              link.click();
+                              alert('4K version already saved! Use the download button (first icon) to save it.');
                               return;
                             }
                             
