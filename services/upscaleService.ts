@@ -1,4 +1,4 @@
-// Upscale Service - Replicate for images
+// Upscale Service - Replicate for images and video
 
 export const upscaleImage = async (imageUrl: string): Promise<string> => {
   // Convert image URL to base64 first
@@ -23,4 +23,20 @@ export const upscaleImage = async (imageUrl: string): Promise<string> => {
   
   const data = await apiResponse.json();
   return data.base64; // Return base64 data URL directly
+};
+
+export const upscaleVideo = async (videoUrl: string): Promise<string> => {
+  const response = await fetch('/api/upscale-video', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ video: videoUrl })
+  });
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to upscale video');
+  }
+  
+  const data = await response.json();
+  return data.url;
 };
