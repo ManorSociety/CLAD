@@ -1152,6 +1152,11 @@ const EditorView = ({ project, userTier, user, onBack, onUpdateProject, onUpgrad
                       controls 
                       playsInline
                     />
+                    {hdVideoVersions[project.generatedVideos.indexOf(activeVideo)] && (
+                      <div className="absolute top-4 left-4 bg-amber-600 text-white text-xs font-bold px-2 py-1 rounded flex items-center gap-1">
+                        <i className="fa-solid fa-film text-[10px]"></i> 4K VIDEO
+                      </div>
+                    )}
                     <div className="absolute top-4 right-4 hidden md:flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button 
                         onClick={async () => {
@@ -1159,21 +1164,27 @@ const EditorView = ({ project, userTier, user, onBack, onUpdateProject, onUpgrad
                           const videoToDownload = hdVideoVersions[vidIdx] || activeVideo;
                           const is4K = !!hdVideoVersions[vidIdx];
                           const suffix = is4K ? '-4K' : '';
-                          const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-                          if (isMobile && navigator.share) {
-                            try {
-                              const response = await fetch(videoToDownload);
-                              const blob = await response.blob();
-                              const file = new File([blob], `${project.name.toLowerCase().replace(/\s+/g, '-')}${suffix}-video-${Date.now()}.mp4`, { type: 'video/mp4' });
+                          const filename = `${project.name.toLowerCase().replace(/\s+/g, '-')}${suffix}-video-${Date.now()}.mp4`;
+                          try {
+                            const response = await fetch(videoToDownload);
+                            const blob = await response.blob();
+                            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                            if (isMobile && navigator.share && navigator.canShare({ files: [new File([blob], filename, { type: 'video/mp4' })] })) {
+                              const file = new File([blob], filename, { type: 'video/mp4' });
                               await navigator.share({ files: [file], title: 'CLAD Video' });
-                            } catch (err) {
-                              window.open(videoToDownload, '_blank');
+                            } else {
+                              const blobUrl = URL.createObjectURL(blob);
+                              const link = document.createElement('a');
+                              link.href = blobUrl;
+                              link.download = filename;
+                              document.body.appendChild(link);
+                              link.click();
+                              document.body.removeChild(link);
+                              URL.revokeObjectURL(blobUrl);
                             }
-                          } else {
-                            const link = document.createElement('a');
-                            link.href = videoToDownload;
-                            link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}${suffix}-video-${Date.now()}.mp4`;
-                            link.click();
+                          } catch (err) {
+                            console.error('Video download error:', err);
+                            window.open(videoToDownload, '_blank');
                           }
                         }}
                         className="w-12 h-12 bg-black/80 backdrop-blur rounded-full flex items-center justify-center text-white hover:bg-amber-500 hover:text-black transition-all"
