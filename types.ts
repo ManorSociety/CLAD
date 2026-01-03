@@ -354,6 +354,7 @@ export interface Project {
   generatedFloorPlans: string[];
   generatedVideos: string[];
   hdVersions?: {[key: number]: string};
+  hdVideoVersions?: {[key: number]: string};
   referenceImages?: string[];
   activeStyleId?: string;
   lighting?: LightingMode;

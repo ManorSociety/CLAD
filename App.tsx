@@ -917,6 +917,7 @@ const EditorView = ({ project, userTier, user, onBack, onUpdateProject, onUpgrad
   const [renderIdx, setRenderIdx] = useState(project.generatedRenderings?.length > 0 ? project.generatedRenderings.length - 1 : -1);
   const [videoIdx, setVideoIdx] = useState(project.generatedVideos?.length > 0 ? project.generatedVideos.length - 1 : -1);
   const [hdVersions, setHdVersions] = useState<{[key: number]: string}>(project.hdVersions || {});
+  const [hdVideoVersions, setHdVideoVersions] = useState<{[key: number]: string}>(project.hdVideoVersions || {});
   const [isUpscaling, setIsUpscaling] = useState(false);
 
   const tierValue = (t: SubscriptionTier) => {

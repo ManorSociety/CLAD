@@ -68,7 +68,10 @@ export const saveProject = async (project: Project, userId: string): Promise<voi
       renderings: renderingUrls, renders: rendersJsonb, videos: videos, style_id: project.activeStyleId || null,
       lighting: project.lighting || null, environment: project.environment || null, camera_angle: project.cameraAngle || null,
       render_mode: project.renderMode || 'EXTERIOR', room_type: project.roomType || null,
-      custom_directives: project.customDirectives || null, updated_at: new Date().toISOString()
+      custom_directives: project.customDirectives || null,
+      hd_versions: project.hdVersions || null,
+      hd_video_versions: project.hdVideoVersions || null,
+      updated_at: new Date().toISOString()
     }, { onConflict: 'id' });
   } catch (e) { console.error('Failed to save project:', e); }
 };
@@ -97,7 +100,8 @@ export const loadProjects = async (userId: string): Promise<Project[]> => {
       id: p.id, name: p.name || 'Untitled Project', imageUrl, generatedRenderings,
       generatedVideos: p.videos || [], activeStyleId: p.style_id, lighting: p.lighting,
       environment: p.environment, cameraAngle: p.camera_angle, renderMode: p.render_mode || 'EXTERIOR',
-      roomType: p.room_type, customDirectives: p.custom_directives, createdAt: p.created_at, updatedAt: p.updated_at
+      roomType: p.room_type, customDirectives: p.custom_directives, createdAt: p.created_at, updatedAt: p.updated_at,
+      hdVersions: p.hd_versions || {}, hdVideoVersions: p.hd_video_versions || {}
     });
   }
   return projects;
