@@ -1,7 +1,7 @@
 import Replicate from 'replicate';
 
 export const config = {
-  maxDuration: 60,
+  maxDuration: 120, // Increased to 120 seconds
 };
 
 export default async function handler(req: any, res: any) {
@@ -39,8 +39,7 @@ export default async function handler(req: any, res: any) {
     const mimeType = response.headers.get('content-type') || 'image/png';
 
     return res.status(200).json({ 
-      base64: `data:${mimeType};base64,${base64}`,
-      url: imageUrl // Keep URL as backup
+      base64: `data:${mimeType};base64,${base64}`
     });
   } catch (error: any) {
     console.error('Upscale error:', error);
