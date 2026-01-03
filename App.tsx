@@ -1198,6 +1198,11 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                 ) : activeImage ? (
                   <>
                     <img src={activeImage} className="w-full h-full object-contain shadow-[0_40px_120px_rgba(0,0,0,0.9)] animate-fade-in transition-all duration-1000" alt="Studio Asset" />
+                    {hdVersions[renderIdx] && (
+                      <div className="absolute top-4 left-4 bg-purple-600 text-white text-xs font-bold px-2 py-1 rounded flex items-center gap-1">
+                        <i className="fa-solid fa-expand text-[10px]"></i> 4K READY
+                      </div>
+                    )}
                     <div className="absolute top-4 right-4 hidden md:flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button 
                         onClick={() => {
