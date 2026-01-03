@@ -26,31 +26,49 @@ export default async function handler(req: any, res: any) {
 
     console.log('Starting video upscale for:', videoUrl);
 
-    // Use runwayml/upscale-v1 for video upscaling
     const output = await replicate.run("runwayml/upscale-v1", {
       input: {
         video: videoUrl
       }
     });
 
-    // Handle different output formats
+    console.log('Replicate raw output:', output, typeof output);
+
+    // Handle FileOutput from Replicate SDK v0.25+
     let upscaledUrl: string;
     if (typeof output === 'string') {
       upscaledUrl = output;
-    } else if (output && typeof output === 'object') {
-      upscaledUrl = (output as any).url || String(output);
+    } else if (output && typeof (output as any).url === 'function') {
+      // FileOutput object - call .url() method
+      upscaledUrl = (output as any).url();
+    } else if (output && (output as any).url) {
+      upscaledUrl = (output as any).url;
+    } else if (output) {
+      // Try toString which FileOutput supports
+      upscaledUrl = String(output);
+      if (upscaledUrl === '[object Object]') {
+        throw new Error('Could not extract URL from Replicate output');
+      }
     } else {
-      throw new Error('Unexpected output format');
+      throw new Error('No output from Replicate');
     }
 
-    console.log('Replicate video returned:', upscaledUrl);
+    console.log('Extracted video URL:', upscaledUrl);
 
     // Upload to Supabase for permanent storage
-    if (projectId) {
+    if (projectId && upscaledUrl) {
       try {
+        console.log('Fetching video from Replicate...');
         const videoResponse = await fetch(upscaledUrl);
+        
+        if (!videoResponse.ok) {
+          throw new Error(`Failed to fetch video: ${videoResponse.status}`);
+        }
+        
         const arrayBuffer = await videoResponse.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
+        
+        console.log('Video size:', buffer.length, 'bytes');
         
         const fileName = `${userId || 'anon'}/${projectId}/4k-video-${Date.now()}.mp4`;
         
@@ -62,16 +80,18 @@ export default async function handler(req: any, res: any) {
           });
 
         if (uploadError) {
-          console.error('Supabase video upload error:', uploadError);
+          console.error('Supabase upload error:', uploadError);
+          // Return temp URL if permanent upload fails
           return res.status(200).json({ url: upscaledUrl, permanent: false });
         }
 
         const { data: urlData } = supabase.storage.from('renders').getPublicUrl(fileName);
-        console.log('Video uploaded to Supabase:', urlData.publicUrl);
+        console.log('Permanent URL:', urlData.publicUrl);
         
         return res.status(200).json({ url: urlData.publicUrl, permanent: true });
-      } catch (uploadErr) {
-        console.error('Video upload failed:', uploadErr);
+      } catch (uploadErr: any) {
+        console.error('Upload process failed:', uploadErr.message);
+        // Return temp URL as fallback
         return res.status(200).json({ url: upscaledUrl, permanent: false });
       }
     }
