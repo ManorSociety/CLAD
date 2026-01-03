@@ -1357,29 +1357,12 @@ const EditorView = ({ project, userTier, user, onBack, onUpdateProject, onUpgrad
                             
                             setIsUpscaling(true);
                             try {
-                              const hdUrl = await upscaleImage(activeImage);
+                              // upscaleImage now returns Supabase URL directly (handles upload internally)
+                              const hdStorageUrl = await upscaleImage(activeImage, project.id);
                               
-                              // Upload HD to Supabase storage and save URL
-                              const byteString = atob(hdUrl.split(',')[1]);
-                              const mimeType = hdUrl.split(',')[0].split(':')[1].split(';')[0];
-                              const ab = new ArrayBuffer(byteString.length);
-                              const ia = new Uint8Array(ab);
-                              for (let i = 0; i < byteString.length; i++) {
-                                ia[i] = byteString.charCodeAt(i);
-                              }
-                              const blob = new Blob([ab], { type: mimeType });
-                              const fileName = `${user?.id || 'anon'}/${project.id}/4k-${renderIdx}-${Date.now()}.png`;
-                              const { data: uploadData, error: uploadError } = await supabase.storage
-                                .from('renders')
-                                .upload(fileName, blob, { contentType: 'image/png', upsert: true });
-                              
-                              if (uploadError) {
-                                console.error('Upload error:', uploadError);
+                              if (!hdStorageUrl) {
                                 throw new Error('Failed to save 4K image');
                               }
-                              
-                              const { data: urlData } = supabase.storage.from('renders').getPublicUrl(fileName);
-                              const hdStorageUrl = urlData.publicUrl;
                               
                               const newHdVersions = { ...hdVersions, [renderIdx]: hdStorageUrl };
                               setHdVersions(newHdVersions);
@@ -1640,26 +1623,10 @@ const EditorView = ({ project, userTier, user, onBack, onUpdateProject, onUpgrad
                     
                     setIsUpscaling(true);
                     try {
-                      const hdUrl = await upscaleImage(activeImage);
+                      // upscaleImage now returns Supabase URL directly
+                      const hdStorageUrl = await upscaleImage(activeImage, project.id);
                       
-                      // Upload to Supabase storage
-                      const byteString = atob(hdUrl.split(',')[1]);
-                      const mimeType = hdUrl.split(',')[0].split(':')[1].split(';')[0];
-                      const ab = new ArrayBuffer(byteString.length);
-                      const ia = new Uint8Array(ab);
-                      for (let i = 0; i < byteString.length; i++) {
-                        ia[i] = byteString.charCodeAt(i);
-                      }
-                      const blob = new Blob([ab], { type: mimeType });
-                      const fileName = `${user?.id || 'anon'}/${project.id}/4k-${renderIdx}-${Date.now()}.png`;
-                      const { error: uploadError } = await supabase.storage
-                        .from('renders')
-                        .upload(fileName, blob, { contentType: 'image/png', upsert: true });
-                      
-                      if (uploadError) throw new Error('Failed to save 4K');
-                      
-                      const { data: urlData } = supabase.storage.from('renders').getPublicUrl(fileName);
-                      const hdStorageUrl = urlData.publicUrl;
+                      if (!hdStorageUrl) throw new Error('Failed to save 4K');
                       
                       const newHdVersions = { ...hdVersions, [renderIdx]: hdStorageUrl };
                       setHdVersions(newHdVersions);
