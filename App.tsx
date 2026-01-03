@@ -21,7 +21,7 @@ import { upscaleImage, upscaleVideo } from './services/upscaleService';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { PricingSection } from './components/PricingSection';
 
-const LoadingOverlay = ({ message, variant = 'default' }: { message: string, variant?: 'default' | 'cinematic' }) => (
+const LoadingOverlay = ({ message, variant = 'default', submessage }: { message: string, variant?: 'default' | 'cinematic', submessage?: string }) => (
   <div className="fixed inset-0 z-[2000] bg-black/95 backdrop-blur-2xl flex flex-col items-center justify-center space-y-12 animate-in fade-in duration-700">
     <div className="relative">
       <div className={`w-32 h-32 border-2 ${variant === 'cinematic' ? 'border-amber-500/10' : 'border-white/5'} rounded-full flex items-center justify-center`}>
@@ -31,6 +31,7 @@ const LoadingOverlay = ({ message, variant = 'default' }: { message: string, var
     <div className="space-y-6 text-center max-w-sm px-8">
       {variant === 'cinematic' && <p className="text-amber-500 text-[10px] font-black uppercase tracking-[0.5em] mb-2 text-center">CINEMATIC CORE ENGAGED</p>}
       <p className="text-white text-[11px] font-black uppercase tracking-[1.2em] leading-relaxed pl-[1.2em] text-center">{message}</p>
+      {submessage && <p className="text-zinc-500 text-[10px] uppercase tracking-widest text-center">{submessage}</p>}
       <div className="w-48 h-[1px] bg-white/10 mx-auto overflow-hidden relative mt-4">
         <div className={`absolute inset-0 h-full ${variant === 'cinematic' ? 'bg-amber-500' : 'bg-white'} animate-[loading-bar_2s_infinite_ease-in-out]`}></div>
       </div>
@@ -998,7 +999,6 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
     <div className="fixed inset-0 bg-black flex flex-col z-[1500] overflow-hidden">
       {isProcessing && <LoadingOverlay message="CALIBRATING ARCHITECTURAL LIGHT" />}
       {isCinematic && <LoadingOverlay message="ORBITING CINEMATIC CORE" variant="cinematic" />}
-      {isUpscaling && <LoadingOverlay message="ENHANCING TO 4K RESOLUTION" submessage="Keep screen on • This may take several minutes" />}
       {isUpscaling && <LoadingOverlay message="ENHANCING TO 4K RESOLUTION" submessage="Keep screen on • This may take several minutes" />}
       
       <header className="h-32 pt-10 md:pt-0 md:h-24 border-b border-white/5 px-4 md:px-12 flex items-center justify-between bg-black shrink-0 relative z-[1600]">
