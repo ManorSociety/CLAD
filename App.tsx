@@ -1422,16 +1422,47 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
           {viewMode === '3D' && activeImage && (
             <div className="md:hidden w-full py-4 px-6 bg-black border-t border-white/5 flex justify-center gap-4">
               <button 
-                onClick={() => {
+                onClick={async () => {
                   const imageToDownload = hdVersions[renderIdx] || activeImage;
-                  const ext = hdVersions[renderIdx] ? 'png' : 'jpg';
-                  const suffix = hdVersions[renderIdx] ? '-4K' : '';
-                  const link = document.createElement('a');
-                  link.href = imageToDownload;
-                  link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}${suffix}-${Date.now()}.${ext}`;
-                  document.body.appendChild(link);
-                  link.click();
-                  document.body.removeChild(link);
+                  const is4K = !!hdVersions[renderIdx];
+                  const ext = is4K ? 'png' : 'jpg';
+                  const suffix = is4K ? '-4K' : '';
+                  const filename = `${project.name.toLowerCase().replace(/\s+/g, '-')}${suffix}-${Date.now()}.${ext}`;
+                  
+                  try {
+                    // For base64 4K images, convert to blob
+                    let blob;
+                    if (imageToDownload.startsWith('data:')) {
+                      const byteString = atob(imageToDownload.split(',')[1]);
+                      const mimeType = imageToDownload.split(',')[0].split(':')[1].split(';')[0];
+                      const ab = new ArrayBuffer(byteString.length);
+                      const ia = new Uint8Array(ab);
+                      for (let i = 0; i < byteString.length; i++) {
+                        ia[i] = byteString.charCodeAt(i);
+                      }
+                      blob = new Blob([ab], { type: mimeType });
+                    } else {
+                      const response = await fetch(imageToDownload);
+                      blob = await response.blob();
+                    }
+                    
+                    const file = new File([blob], filename, { type: is4K ? 'image/png' : 'image/jpeg' });
+                    
+                    if (navigator.share && navigator.canShare({ files: [file] })) {
+                      await navigator.share({ files: [file], title: 'CLAD Render' });
+                    } else {
+                      const blobUrl = URL.createObjectURL(blob);
+                      const link = document.createElement('a');
+                      link.href = blobUrl;
+                      link.download = filename;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      URL.revokeObjectURL(blobUrl);
+                    }
+                  } catch (err) {
+                    console.error('Download error:', err);
+                  }
                 }}
                 className="w-11 h-11 bg-zinc-900 border border-white/10 rounded-full flex items-center justify-center text-white active:bg-white active:text-black transition-all"
                 title={hdVersions[renderIdx] ? "Download 4K" : "Download"}
@@ -1522,28 +1553,7 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                 <button
                   onClick={async () => {
                     if (hdVersions[renderIdx]) {
-                      // hdVersions now stores base64 data URL
-                      const base64 = hdVersions[renderIdx];
-                      const byteString = atob(base64.split(',')[1]);
-                      const mimeType = base64.split(',')[0].split(':')[1].split(';')[0];
-                      const ab = new ArrayBuffer(byteString.length);
-                      const ia = new Uint8Array(ab);
-                      for (let i = 0; i < byteString.length; i++) {
-                        ia[i] = byteString.charCodeAt(i);
-                      }
-                      const blob = new Blob([ab], { type: mimeType });
-                      const file = new File([blob], `${project.name.toLowerCase().replace(/\s+/g, '-')}-4K.png`, { type: mimeType });
-                      
-                      if (navigator.share && navigator.canShare({ files: [file] })) {
-                        await navigator.share({ files: [file], title: 'CLAD 4K Render' });
-                      } else {
-                        const link = document.createElement('a');
-                        link.href = base64;
-                        link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}-4K.png`;
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                      }
+                      alert('4K version is ready! Use the download button to save.');
                       return;
                     }
                     
