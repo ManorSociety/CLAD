@@ -1144,7 +1144,7 @@ const EditorView = ({ project, userTier, user, onBack, onUpdateProject, onUpgrad
                 {viewMode === 'CINEMATIC' && activeVideo ? (
                   <>
                     <video 
-                      src={activeVideo} 
+                      src={hdVideoVersions[project.generatedVideos.indexOf(activeVideo)] || activeVideo} 
                       className="w-full h-full shadow-2xl animate-fade-in rounded-sm object-contain" 
                       autoPlay 
                       loop 
@@ -1155,20 +1155,24 @@ const EditorView = ({ project, userTier, user, onBack, onUpdateProject, onUpgrad
                     <div className="absolute top-4 right-4 hidden md:flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button 
                         onClick={async () => {
+                          const vidIdx = project.generatedVideos.indexOf(activeVideo);
+                          const videoToDownload = hdVideoVersions[vidIdx] || activeVideo;
+                          const is4K = !!hdVideoVersions[vidIdx];
+                          const suffix = is4K ? '-4K' : '';
                           const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
                           if (isMobile && navigator.share) {
                             try {
-                              const response = await fetch(activeVideo);
+                              const response = await fetch(videoToDownload);
                               const blob = await response.blob();
-                              const file = new File([blob], `${project.name.toLowerCase().replace(/\s+/g, '-')}-video-${Date.now()}.mp4`, { type: 'video/mp4' });
+                              const file = new File([blob], `${project.name.toLowerCase().replace(/\s+/g, '-')}${suffix}-video-${Date.now()}.mp4`, { type: 'video/mp4' });
                               await navigator.share({ files: [file], title: 'CLAD Video' });
                             } catch (err) {
-                              window.open(activeVideo, '_blank');
+                              window.open(videoToDownload, '_blank');
                             }
                           } else {
                             const link = document.createElement('a');
-                            link.href = activeVideo;
-                            link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}-video-${Date.now()}.mp4`;
+                            link.href = videoToDownload;
+                            link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}${suffix}-video-${Date.now()}.mp4`;
                             link.click();
                           }
                         }}
@@ -1194,35 +1198,51 @@ const EditorView = ({ project, userTier, user, onBack, onUpdateProject, onUpgrad
                       >
                         <i className="fa-solid fa-share-nodes"></i>
                       </button>
-                      {(userTier === 'PRO' || userTier === 'ENTERPRISE') && creditsAvailable >= 5 && (
+                      {(userTier === 'PRO' || userTier === 'ENTERPRISE') && (
                         <button
                           onClick={async () => {
-                            if (!confirm('Upscale video to 4K? This uses 5 credits and may take 1-2 minutes.')) return;
+                            const videoIdx = project.generatedVideos.indexOf(activeVideo);
+                            if (hdVideoVersions[videoIdx]) {
+                              alert('4K version already saved! Use download button to get it.');
+                              return;
+                            }
+                            if (creditsAvailable < 5) {
+                              alert('You need 5 credits for 4K video export');
+                              return;
+                            }
+                            if (!confirm('Upscale video to 4K? This uses 5 credits and takes 2-4 minutes.')) return;
                             setIsUpscaling(true);
                             try {
                               const hdUrl = await upscaleVideo(activeVideo);
-                              // Download the video
+                              // Upload to Supabase storage permanently
                               const response = await fetch(hdUrl);
                               const blob = await response.blob();
-                              const blobUrl = URL.createObjectURL(blob);
-                              const link = document.createElement('a');
-                              link.href = blobUrl;
-                              link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}-4K-video-${Date.now()}.mp4`;
-                              document.body.appendChild(link);
-                              link.click();
-                              document.body.removeChild(link);
-                              URL.revokeObjectURL(blobUrl);
-                              onUpdateProject(project, 5);
+                              const fileName = `${project.id}-4k-video-${videoIdx}-${Date.now()}.mp4`;
+                              const { error: uploadError } = await supabase.storage
+                                .from('renders')
+                                .upload(fileName, blob, { contentType: 'video/mp4', upsert: true });
+                              
+                              if (uploadError) throw new Error('Failed to save 4K video');
+                              
+                              const { data: urlData } = supabase.storage.from('renders').getPublicUrl(fileName);
+                              const hdStorageUrl = urlData.publicUrl;
+                              
+                              // Save to project - syncs across all devices
+                              const newHdVideoVersions = { ...hdVideoVersions, [videoIdx]: hdStorageUrl };
+                              setHdVideoVersions(newHdVideoVersions);
+                              onUpdateProject({ ...project, hdVideoVersions: newHdVideoVersions }, 5);
+                              
+                              alert('4K video saved permanently! Use download button anytime.');
                             } catch (err: any) {
                               alert(err.message || '4K video export failed');
                             } finally {
                               setIsUpscaling(false);
                             }
                           }}
-                          className="w-12 h-12 bg-black/80 backdrop-blur rounded-full flex items-center justify-center text-amber-500 border border-amber-500/50 hover:bg-amber-500 hover:text-black transition-all"
-                          title="4K Video (5 credits)"
+                          className={`w-12 h-12 bg-black/80 backdrop-blur rounded-full flex items-center justify-center transition-all ${hdVideoVersions[project.generatedVideos.indexOf(activeVideo)] ? 'text-amber-500 border-2 border-amber-500' : 'text-amber-500 border border-amber-500/50 hover:bg-amber-500 hover:text-black'}`}
+                          title={hdVideoVersions[project.generatedVideos.indexOf(activeVideo)] ? "4K Ready - Download anytime" : "4K Video (5 credits)"}
                         >
-                          <i className="fa-solid fa-film"></i>
+                          <i className={`fa-solid ${hdVideoVersions[project.generatedVideos.indexOf(activeVideo)] ? 'fa-check' : 'fa-film'}`}></i>
                         </button>
                       )}
                     </div>
