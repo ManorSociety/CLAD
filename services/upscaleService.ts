@@ -1,5 +1,4 @@
-// Upscale Service - Replicate for images and video
-// Server handles Supabase upload to avoid CORS issues
+// Upscale Service - Server handles Supabase upload
 
 export const upscaleImage = async (imageUrl: string, projectId?: string, userId?: string): Promise<string> => {
   const apiResponse = await fetch('/api/upscale-image', {
@@ -14,11 +13,6 @@ export const upscaleImage = async (imageUrl: string, projectId?: string, userId?
   }
 
   const data = await apiResponse.json();
-  
-  if (!data.permanent) {
-    console.warn('4K image is temporary URL - may expire in ~1 hour');
-  }
-  
   return data.url;
 };
 

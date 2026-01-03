@@ -1213,7 +1213,7 @@ const EditorView = ({ project, userTier, user, onBack, onUpdateProject, onUpgrad
                             if (!confirm('Upscale video to 4K? This uses 5 credits and takes 2-4 minutes.')) return;
                             setIsUpscaling(true);
                             try {
-                              const hdUrl = await upscaleVideo(activeVideo);
+                              const hdUrl = await upscaleVideo(activeVideo, project.id, user?.id);
                               // Upload to Supabase storage permanently
                               const response = await fetch(hdUrl);
                               const blob = await response.blob();

@@ -5,7 +5,7 @@ export const config = { maxDuration: 120 };
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.VITE_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
+  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
 
 export default async function handler(req: any, res: any) {
@@ -26,8 +26,9 @@ export default async function handler(req: any, res: any) {
 
     console.log('Starting upscale for:', imageUrl);
 
+    // Use the latest Real-ESRGAN model (no version hash - uses latest)
     const output = await replicate.run(
-      "nightmareai/real-esrgan:f121d640bd286e1fdc67f9799164c1d5be36ff74576ee11c803ae5b665dd46aa",
+      "nightmareai/real-esrgan:42fed1c4974146d4d2414e2be2c5277c7fcf05fcc3a73abf41610695738c1d7b",
       {
         input: {
           image: imageUrl,
@@ -40,7 +41,7 @@ export default async function handler(req: any, res: any) {
     const upscaledUrl = output as string;
     console.log('Replicate returned:', upscaledUrl);
 
-    // Upload to Supabase on server side (no CORS issues)
+    // Always upload to Supabase for permanent storage
     if (projectId) {
       try {
         const imageResponse = await fetch(upscaledUrl);
@@ -58,7 +59,6 @@ export default async function handler(req: any, res: any) {
 
         if (uploadError) {
           console.error('Supabase upload error:', uploadError);
-          // Fall back to Replicate URL (temporary)
           return res.status(200).json({ url: upscaledUrl, permanent: false });
         }
 
