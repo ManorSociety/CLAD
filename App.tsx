@@ -1217,7 +1217,7 @@ const EditorView = ({ project, userTier, user, onBack, onUpdateProject, onUpgrad
                               // Upload to Supabase storage permanently
                               const response = await fetch(hdUrl);
                               const blob = await response.blob();
-                              const fileName = `${project.id}-4k-video-${videoIdx}-${Date.now()}.mp4`;
+                              const fileName = `${user?.id || 'anon'}/${project.id}/4k-video-${videoIdx}-${Date.now()}.mp4`;
                               const { error: uploadError } = await supabase.storage
                                 .from('renders')
                                 .upload(fileName, blob, { contentType: 'video/mp4', upsert: true });
