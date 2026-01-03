@@ -1448,34 +1448,32 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
               {(userTier === 'PRO' || userTier === 'ENTERPRISE') && creditsAvailable >= 5 && (
                 <button
                   onClick={async () => {
-                    if (!confirm('Upscale video to 4K? This uses 5 credits and may take 1-2 minutes.')) return;
-                    setIsUpscaling(true);
+                    const email = prompt('4K Video Export (5 credits)\n\nEnter your email to receive the download link when ready (2-4 minutes):', user?.email || '');
+                    if (!email) return;
+                    if (!email.includes('@')) { alert('Please enter a valid email'); return; }
+                    if (!confirm(`Send 4K video to ${email}?\n\nThis uses 5 credits.`)) return;
+                    
                     try {
-                      const hdUrl = await upscaleVideo(activeVideo);
-                      const response = await fetch(hdUrl);
-                      const blob = await response.blob();
-                      const file = new File([blob], `${project.name.toLowerCase().replace(/\s+/g, '-')}-4K-video.mp4`, { type: 'video/mp4' });
-                      if (navigator.share && navigator.canShare({ files: [file] })) {
-                        await navigator.share({ files: [file], title: 'CLAD 4K Video' });
-                      } else {
-                        const blobUrl = URL.createObjectURL(blob);
-                        const link = document.createElement('a');
-                        link.href = blobUrl;
-                        link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}-4K-video-${Date.now()}.mp4`;
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                        URL.revokeObjectURL(blobUrl);
-                      }
+                      const response = await fetch('/api/start-video-upscale', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          video: activeVideo,
+                          email,
+                          projectName: project.name,
+                          userId: user?.id
+                        })
+                      });
+                      const data = await response.json();
+                      if (!response.ok) throw new Error(data.message);
                       onUpdateProject(project, 5);
+                      alert('Processing started!\n\nCheck your email in 3-5 minutes for the download link.');
                     } catch (err: any) {
-                      alert(err.message || '4K video export failed');
-                    } finally {
-                      setIsUpscaling(false);
+                      alert(err.message || '4K video failed to start');
                     }
                   }}
                   className="w-11 h-11 bg-zinc-900 border border-amber-500/50 rounded-full flex items-center justify-center text-amber-500 active:bg-amber-500 active:text-black transition-all"
-                  title="4K Video (5 credits)"
+                  title="4K Video (Email Delivery)"
                 >
                   <i className="fa-solid fa-film text-sm"></i>
                 </button>
