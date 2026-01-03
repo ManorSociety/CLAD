@@ -1,7 +1,7 @@
 // Upscale Service - Replicate for images and video
 // URL-based to avoid Vercel body size limits
 
-import { supabase } from './supabase';
+import { supabase } from './supabaseClient';
 
 export const upscaleImage = async (imageUrl: string, projectId?: string): Promise<string> => {
   const apiResponse = await fetch('/api/upscale-image', {
