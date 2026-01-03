@@ -1368,7 +1368,7 @@ const EditorView = ({ project, userTier, user, onBack, onUpdateProject, onUpgrad
                                 ia[i] = byteString.charCodeAt(i);
                               }
                               const blob = new Blob([ab], { type: mimeType });
-                              const fileName = `${project.id}-4k-${renderIdx}-${Date.now()}.png`;
+                              const fileName = `${user?.id || 'anon'}/${project.id}/4k-${renderIdx}-${Date.now()}.png`;
                               const { data: uploadData, error: uploadError } = await supabase.storage
                                 .from('renders')
                                 .upload(fileName, blob, { contentType: 'image/png', upsert: true });
@@ -1651,7 +1651,7 @@ const EditorView = ({ project, userTier, user, onBack, onUpdateProject, onUpgrad
                         ia[i] = byteString.charCodeAt(i);
                       }
                       const blob = new Blob([ab], { type: mimeType });
-                      const fileName = `${project.id}-4k-${renderIdx}-${Date.now()}.png`;
+                      const fileName = `${user?.id || 'anon'}/${project.id}/4k-${renderIdx}-${Date.now()}.png`;
                       const { error: uploadError } = await supabase.storage
                         .from('renders')
                         .upload(fileName, blob, { contentType: 'image/png', upsert: true });
