@@ -1,7 +1,14 @@
 import Replicate from 'replicate';
 import { createClient } from '@supabase/supabase-js';
 
-export const config = { maxDuration: 300 };
+export const config = { 
+  maxDuration: 300,
+  api: {
+    bodyParser: {
+      sizeLimit: '50mb'
+    }
+  }
+};
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.VITE_SUPABASE_URL || '',
@@ -20,21 +27,44 @@ export default async function handler(req: any, res: any) {
       return res.status(400).json({ message: 'Video URL is required' });
     }
 
+    let sourceUrl = videoUrl;
+
+    // If video is base64, upload to Supabase first
+    if (videoUrl.startsWith('data:video')) {
+      console.log('Converting base64 video to URL...');
+      const base64Data = videoUrl.split(',')[1];
+      const buffer = Buffer.from(base64Data, 'base64');
+      const tempFileName = `${userId || 'anon'}/${projectId}/temp-video-${Date.now()}.mp4`;
+      
+      const { error: tempUploadError } = await supabase.storage
+        .from('renders')
+        .upload(tempFileName, buffer, { contentType: 'video/mp4', upsert: true });
+      
+      if (tempUploadError) {
+        console.error('Failed to upload temp video:', tempUploadError);
+        return res.status(500).json({ message: 'Failed to process video' });
+      }
+      
+      const { data: tempUrlData } = supabase.storage.from('renders').getPublicUrl(tempFileName);
+      sourceUrl = tempUrlData.publicUrl;
+      console.log('Temp video URL:', sourceUrl);
+    }
+
     const replicate = new Replicate({
       auth: process.env.REPLICATE_API_TOKEN,
     });
 
-    console.log('Starting video upscale for:', videoUrl);
+    console.log('Starting video upscale for:', sourceUrl);
 
     const output = await replicate.run("runwayml/upscale-v1", {
       input: {
-        video: videoUrl
+        video: sourceUrl
       }
     });
 
     console.log('Replicate raw output:', output, typeof output);
 
-    // Handle FileOutput from Replicate SDK v0.25+
+    // Handle FileOutput from Replicate SDK
     let upscaledUrl: string;
     if (typeof output === 'string') {
       upscaledUrl = output;
@@ -53,10 +83,10 @@ export default async function handler(req: any, res: any) {
 
     console.log('Extracted video URL:', upscaledUrl);
 
-    // Upload to Supabase for permanent storage
+    // Upload 4K video to Supabase for permanent storage
     if (projectId && upscaledUrl) {
       try {
-        console.log('Fetching video from Replicate...');
+        console.log('Fetching 4K video from Replicate...');
         const videoResponse = await fetch(upscaledUrl);
         
         if (!videoResponse.ok) {
@@ -66,7 +96,7 @@ export default async function handler(req: any, res: any) {
         const arrayBuffer = await videoResponse.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
         
-        console.log('Video size:', buffer.length, 'bytes');
+        console.log('4K Video size:', buffer.length, 'bytes');
         
         const fileName = `${userId || 'anon'}/${projectId}/4k-video-${Date.now()}.mp4`;
         
@@ -83,7 +113,7 @@ export default async function handler(req: any, res: any) {
         }
 
         const { data: urlData } = supabase.storage.from('renders').getPublicUrl(fileName);
-        console.log('Permanent URL:', urlData.publicUrl);
+        console.log('Permanent 4K URL:', urlData.publicUrl);
         
         return res.status(200).json({ url: urlData.publicUrl, permanent: true });
       } catch (uploadErr: any) {
