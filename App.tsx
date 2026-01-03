@@ -17,6 +17,7 @@ import { SpecSheetModal } from './components/SpecSheetModal';
 import { ShareModal } from './components/ShareModal';
 import { BuilderDashboard } from './components/BuilderDashboard';
 import { generateProjectPDF } from './services/pdfService';
+import { upscaleImage, upscaleVideo } from './services/upscaleService';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { PricingSection } from './components/PricingSection';
 
@@ -1267,6 +1268,37 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                           <i className="fa-solid fa-file-pdf"></i>
                         </button>
                       )}
+                      {renderIdx >= 0 && creditsAvailable >= 2 && (
+                        <button
+                          onClick={async () => {
+                            if (!confirm('Upscale to 4K HD? This uses 2 credits.')) return;
+                            try {
+                              const loadingEl = document.createElement('div');
+                              loadingEl.className = 'fixed inset-0 z-[3000] bg-black/90 flex items-center justify-center';
+                              loadingEl.innerHTML = '<div class="text-center"><div class="w-16 h-16 border-t-2 border-white rounded-full animate-spin mb-4"></div><p class="text-white text-[10px] uppercase tracking-widest">Enhancing to 4K...</p></div>';
+                              document.body.appendChild(loadingEl);
+                              
+                              const hdUrl = await upscaleImage(activeImage);
+                              document.body.removeChild(loadingEl);
+                              
+                              // Download the HD image
+                              const link = document.createElement('a');
+                              link.href = hdUrl;
+                              link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}-4K-${Date.now()}.png`;
+                              link.click();
+                              
+                              // Deduct credits
+                              onUpdateProject(project, 2);
+                            } catch (err: any) {
+                              alert(err.message || 'HD export failed');
+                            }
+                          }}
+                          className="w-12 h-12 bg-black/80 backdrop-blur rounded-full flex items-center justify-center text-white hover:bg-purple-500 hover:text-white transition-all"
+                          title="4K HD Export (2 credits)"
+                        >
+                          <i className="fa-solid fa-expand"></i>
+                        </button>
+                      )}
                     </div>
                   </>
                 ) : (
@@ -1356,6 +1388,35 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
               >
                 <i className="fa-solid fa-share-nodes text-sm"></i>
               </button>
+              {(userTier === 'PRO' || userTier === 'ENTERPRISE') && creditsAvailable >= 5 && (
+                <button
+                  onClick={async () => {
+                    if (!confirm('Upscale video to 4K? This uses 5 credits.')) return;
+                    try {
+                      const loadingEl = document.createElement('div');
+                      loadingEl.className = 'fixed inset-0 z-[3000] bg-black/90 flex items-center justify-center';
+                      loadingEl.innerHTML = '<div class="text-center"><div class="w-16 h-16 border-t-2 border-amber-500 rounded-full animate-spin mb-4"></div><p class="text-white text-[10px] uppercase tracking-widest">Upscaling Video to 4K...</p><p class="text-zinc-500 text-[9px] mt-2">This may take 1-2 minutes</p></div>';
+                      document.body.appendChild(loadingEl);
+                      
+                      const hdUrl = await upscaleVideo(activeVideo);
+                      document.body.removeChild(loadingEl);
+                      
+                      const link = document.createElement('a');
+                      link.href = hdUrl;
+                      link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}-4K-video-${Date.now()}.mp4`;
+                      link.click();
+                      
+                      onUpdateProject(project, 5);
+                    } catch (err: any) {
+                      alert(err.message || '4K video export failed');
+                    }
+                  }}
+                  className="w-11 h-11 bg-zinc-900 border border-amber-500/50 rounded-full flex items-center justify-center text-amber-500 active:bg-amber-500 active:text-black transition-all"
+                  title="4K Video (5 credits)"
+                >
+                  <i className="fa-solid fa-film text-sm"></i>
+                </button>
+              )}
             </div>
           )}
           
@@ -1451,6 +1512,35 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                   title="Export PDF"
                 >
                   <i className="fa-solid fa-file-pdf text-sm"></i>
+                </button>
+              )}
+              {renderIdx >= 0 && creditsAvailable >= 2 && (
+                <button
+                  onClick={async () => {
+                    if (!confirm('Upscale to 4K HD? This uses 2 credits.')) return;
+                    try {
+                      const loadingEl = document.createElement('div');
+                      loadingEl.className = 'fixed inset-0 z-[3000] bg-black/90 flex items-center justify-center';
+                      loadingEl.innerHTML = '<div class="text-center"><div class="w-16 h-16 border-t-2 border-white rounded-full animate-spin mb-4"></div><p class="text-white text-[10px] uppercase tracking-widest">Enhancing to 4K...</p></div>';
+                      document.body.appendChild(loadingEl);
+                      
+                      const hdUrl = await upscaleImage(activeImage);
+                      document.body.removeChild(loadingEl);
+                      
+                      const link = document.createElement('a');
+                      link.href = hdUrl;
+                      link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}-4K-${Date.now()}.png`;
+                      link.click();
+                      
+                      onUpdateProject(project, 2);
+                    } catch (err: any) {
+                      alert(err.message || 'HD export failed');
+                    }
+                  }}
+                  className="w-11 h-11 bg-zinc-900 border border-white/10 rounded-full flex items-center justify-center text-white active:bg-purple-500 transition-all"
+                  title="4K HD Export"
+                >
+                  <i className="fa-solid fa-expand text-sm"></i>
                 </button>
               )}
             </div>
