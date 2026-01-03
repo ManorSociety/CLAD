@@ -1192,7 +1192,37 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                       >
                         <i className="fa-solid fa-share-nodes"></i>
                       </button>
-                      {/* 4K Video - Coming Soon */}
+                      {(userTier === 'PRO' || userTier === 'ENTERPRISE') && creditsAvailable >= 5 && (
+                        <button
+                          onClick={async () => {
+                            if (!confirm('Upscale video to 4K? This uses 5 credits and may take 1-2 minutes.')) return;
+                            setIsUpscaling(true);
+                            try {
+                              const hdUrl = await upscaleVideo(activeVideo);
+                              // Download the video
+                              const response = await fetch(hdUrl);
+                              const blob = await response.blob();
+                              const blobUrl = URL.createObjectURL(blob);
+                              const link = document.createElement('a');
+                              link.href = blobUrl;
+                              link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}-4K-video-${Date.now()}.mp4`;
+                              document.body.appendChild(link);
+                              link.click();
+                              document.body.removeChild(link);
+                              URL.revokeObjectURL(blobUrl);
+                              onUpdateProject(project, 5);
+                            } catch (err: any) {
+                              alert(err.message || '4K video export failed');
+                            } finally {
+                              setIsUpscaling(false);
+                            }
+                          }}
+                          className="w-12 h-12 bg-black/80 backdrop-blur rounded-full flex items-center justify-center text-amber-500 border border-amber-500/50 hover:bg-amber-500 hover:text-black transition-all"
+                          title="4K Video (5 credits)"
+                        >
+                          <i className="fa-solid fa-film"></i>
+                        </button>
+                      )}
                     </div>
                   </>
                 ) : activeImage ? (
@@ -1415,7 +1445,41 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
               >
                 <i className="fa-solid fa-share-nodes text-sm"></i>
               </button>
-              {/* 4K Video - Coming Soon */}
+              {(userTier === 'PRO' || userTier === 'ENTERPRISE') && creditsAvailable >= 5 && (
+                <button
+                  onClick={async () => {
+                    if (!confirm('Upscale video to 4K? This uses 5 credits and may take 1-2 minutes.')) return;
+                    setIsUpscaling(true);
+                    try {
+                      const hdUrl = await upscaleVideo(activeVideo);
+                      const response = await fetch(hdUrl);
+                      const blob = await response.blob();
+                      const file = new File([blob], `${project.name.toLowerCase().replace(/\s+/g, '-')}-4K-video.mp4`, { type: 'video/mp4' });
+                      if (navigator.share && navigator.canShare({ files: [file] })) {
+                        await navigator.share({ files: [file], title: 'CLAD 4K Video' });
+                      } else {
+                        const blobUrl = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = blobUrl;
+                        link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}-4K-video-${Date.now()}.mp4`;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(blobUrl);
+                      }
+                      onUpdateProject(project, 5);
+                    } catch (err: any) {
+                      alert(err.message || '4K video export failed');
+                    } finally {
+                      setIsUpscaling(false);
+                    }
+                  }}
+                  className="w-11 h-11 bg-zinc-900 border border-amber-500/50 rounded-full flex items-center justify-center text-amber-500 active:bg-amber-500 active:text-black transition-all"
+                  title="4K Video (5 credits)"
+                >
+                  <i className="fa-solid fa-film text-sm"></i>
+                </button>
+              )}
             </div>
           )}
           

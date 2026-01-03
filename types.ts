@@ -353,6 +353,7 @@ export interface Project {
   generatedRenderings: string[];
   generatedFloorPlans: string[];
   generatedVideos: string[];
+  hdVersions?: {[key: number]: string};
   referenceImages?: string[];
   activeStyleId?: string;
   lighting?: LightingMode;
