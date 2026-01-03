@@ -1192,34 +1192,7 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                       >
                         <i className="fa-solid fa-share-nodes"></i>
                       </button>
-                      {(userTier === 'PRO' || userTier === 'ENTERPRISE') && creditsAvailable >= 5 && (
-                        <button
-                          onClick={async () => {
-                            if (!confirm('Upscale video to 4K? This uses 5 credits and may take 1-2 minutes.')) return;
-                            setIsUpscaling(true);
-                            try {
-                              const hdUrl = await upscaleVideo(activeVideo);
-                              const response = await fetch(hdUrl);
-                              const blob = await response.blob();
-                              const blobUrl = URL.createObjectURL(blob);
-                              const link = document.createElement('a');
-                              link.href = blobUrl;
-                              link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}-4K-video-${Date.now()}.mp4`;
-                              link.click();
-                              URL.revokeObjectURL(blobUrl);
-                              onUpdateProject(project, 5);
-                            } catch (err: any) {
-                              alert(err.message || '4K video export failed');
-                            } finally {
-                              setIsUpscaling(false);
-                            }
-                          }}
-                          className="w-12 h-12 bg-black/80 backdrop-blur rounded-full flex items-center justify-center text-amber-500 border border-amber-500/50 hover:bg-amber-500 hover:text-black transition-all"
-                          title="4K Video (5 credits)"
-                        >
-                          <i className="fa-solid fa-film"></i>
-                        </button>
-                      )}
+                      {/* 4K Video - Coming Soon */}
                     </div>
                   </>
                 ) : activeImage ? (
@@ -1329,15 +1302,8 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                               setHdVersions(newHdVersions);
                               onUpdateProject({ ...project, hdVersions: newHdVersions }, 2);
                               
-                              // Download the HD image - fetch as blob for cross-origin
-                              const response = await fetch(hdUrl);
-                              const blob = await response.blob();
-                              const blobUrl = URL.createObjectURL(blob);
-                              const link = document.createElement('a');
-                              link.href = blobUrl;
-                              link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}-4K-${Date.now()}.png`;
-                              link.click();
-                              URL.revokeObjectURL(blobUrl);
+                              // Just alert success - user clicks again to download
+                              alert('4K version ready! Click the button again to download.');
                             } catch (err: any) {
                               alert(err.message || 'HD export failed');
                             } finally {
@@ -1439,30 +1405,7 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
               >
                 <i className="fa-solid fa-share-nodes text-sm"></i>
               </button>
-              {(userTier === 'PRO' || userTier === 'ENTERPRISE') && creditsAvailable >= 5 && (
-                <button
-                  onClick={async () => {
-                    if (!confirm('Upscale video to 4K? This uses 5 credits and may take 1-2 minutes.')) return;
-                    setIsUpscaling(true);
-                    try {
-                      const hdUrl = await upscaleVideo(activeVideo);
-                      const link = document.createElement('a');
-                      link.href = hdUrl;
-                      link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}-4K-video-${Date.now()}.mp4`;
-                      link.click();
-                      onUpdateProject(project, 5);
-                    } catch (err: any) {
-                      alert(err.message || '4K video export failed');
-                    } finally {
-                      setIsUpscaling(false);
-                    }
-                  }}
-                  className="w-11 h-11 bg-zinc-900 border border-amber-500/50 rounded-full flex items-center justify-center text-amber-500 active:bg-amber-500 active:text-black transition-all"
-                  title="4K Video (5 credits)"
-                >
-                  <i className="fa-solid fa-film text-sm"></i>
-                </button>
-              )}
+              {/* 4K Video - Coming Soon */}
             </div>
           )}
           
@@ -1567,9 +1510,10 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                       const response = await fetch(hdVersions[renderIdx]);
                       const blob = await response.blob();
                       const blobUrl = URL.createObjectURL(blob);
+                      const ext = hdVersions[renderIdx].includes('.png') ? 'png' : 'jpg';
                       const link = document.createElement('a');
                       link.href = blobUrl;
-                      link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}-4K-${Date.now()}.png`;
+                      link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}-4K-${Date.now()}.${ext}`;
                       link.click();
                       URL.revokeObjectURL(blobUrl);
                       return;

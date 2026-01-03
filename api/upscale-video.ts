@@ -1,7 +1,7 @@
 import Replicate from 'replicate';
 
 export const config = {
-  maxDuration: 300, // 5 minutes for video processing
+  maxDuration: 300,
 };
 
 export default async function handler(req: any, res: any) {
@@ -20,14 +20,13 @@ export default async function handler(req: any, res: any) {
       auth: process.env.REPLICATE_API_TOKEN,
     });
 
-    // Use video-realesrgan for video upscaling
+    // Use the correct video upscaler model
     const output = await replicate.run(
-      "lucataco/video-realesrgan:c356448e476c0fac51e554149be279cc5eb7fc13dd9a26e78adabf6a8f8f06fc",
+      "lucataco/real-esrgan-video:c356448e476c0fac51e554149be279cc5eb7fc13dd9a26e78adabf6a8f8f06fc",
       {
         input: {
-          video_path: video,
-          scale: 4,
-          face_enhance: false
+          video: video,
+          scale: 4
         }
       }
     );
