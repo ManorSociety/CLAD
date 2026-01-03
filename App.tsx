@@ -1201,13 +1201,18 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                     <div className="absolute top-4 right-4 hidden md:flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button 
                         onClick={() => {
+                          const imageToDownload = hdVersions[renderIdx] || activeImage;
+                          const ext = hdVersions[renderIdx] ? 'png' : 'jpg';
+                          const suffix = hdVersions[renderIdx] ? '-4K' : '';
                           const link = document.createElement('a');
-                          link.href = activeImage;
-                          link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}-render-${Date.now()}.jpg`;
+                          link.href = imageToDownload;
+                          link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}${suffix}-${Date.now()}.${ext}`;
+                          document.body.appendChild(link);
                           link.click();
+                          document.body.removeChild(link);
                         }}
                         className="w-12 h-12 bg-black/80 backdrop-blur rounded-full flex items-center justify-center text-white hover:bg-white hover:text-black transition-all"
-                        title="Download Image"
+                        title={hdVersions[renderIdx] ? "Download 4K" : "Download Image"}
                       >
                         <i className="fa-solid fa-download"></i>
                       </button>
@@ -1302,13 +1307,8 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                               setHdVersions(newHdVersions);
                               onUpdateProject({ ...project, hdVersions: newHdVersions }, 2);
                               
-                              // Download the 4K image directly from base64
-                              const link = document.createElement('a');
-                              link.href = hdUrl;
-                              link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}-4K-${Date.now()}.png`;
-                              document.body.appendChild(link);
-                              link.click();
-                              document.body.removeChild(link);
+                              // Just save - user can download via regular download button
+                              alert('4K version ready! Use the download button to save.');
                             } catch (err: any) {
                               alert(err.message || 'HD export failed');
                             } finally {
@@ -1418,13 +1418,18 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
             <div className="md:hidden w-full py-4 px-6 bg-black border-t border-white/5 flex justify-center gap-4">
               <button 
                 onClick={() => {
+                  const imageToDownload = hdVersions[renderIdx] || activeImage;
+                  const ext = hdVersions[renderIdx] ? 'png' : 'jpg';
+                  const suffix = hdVersions[renderIdx] ? '-4K' : '';
                   const link = document.createElement('a');
-                  link.href = activeImage;
-                  link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}-render-${Date.now()}.jpg`;
+                  link.href = imageToDownload;
+                  link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}${suffix}-${Date.now()}.${ext}`;
+                  document.body.appendChild(link);
                   link.click();
+                  document.body.removeChild(link);
                 }}
                 className="w-11 h-11 bg-zinc-900 border border-white/10 rounded-full flex items-center justify-center text-white active:bg-white active:text-black transition-all"
-                title="Download"
+                title={hdVersions[renderIdx] ? "Download 4K" : "Download"}
               >
                 <i className="fa-solid fa-download text-sm"></i>
               </button>
@@ -1552,13 +1557,8 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                       setHdVersions(newHdVersions);
                       onUpdateProject({ ...project, hdVersions: newHdVersions }, 2);
                       
-                      // Download directly - hdUrl is now base64
-                      const link = document.createElement('a');
-                      link.href = hdUrl;
-                      link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}-4K-${Date.now()}.png`;
-                      document.body.appendChild(link);
-                      link.click();
-                      document.body.removeChild(link);
+                      // Just save - user can download via regular download button
+                      alert('4K version ready! Use the download button to save.');
                     } catch (err: any) {
                       alert(err.message || 'HD export failed');
                     } finally {
