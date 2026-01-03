@@ -998,8 +998,8 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
     <div className="fixed inset-0 bg-black flex flex-col z-[1500] overflow-hidden">
       {isProcessing && <LoadingOverlay message="CALIBRATING ARCHITECTURAL LIGHT" />}
       {isCinematic && <LoadingOverlay message="ORBITING CINEMATIC CORE" variant="cinematic" />}
-      {isUpscaling && <LoadingOverlay message="ENHANCING TO 4K RESOLUTION" />}
-      {isUpscaling && <LoadingOverlay message="ENHANCING TO 4K RESOLUTION" />}
+      {isUpscaling && <LoadingOverlay message="ENHANCING TO 4K RESOLUTION" submessage="Keep screen on • This may take several minutes" />}
+      {isUpscaling && <LoadingOverlay message="ENHANCING TO 4K RESOLUTION" submessage="Keep screen on • This may take several minutes" />}
       
       <header className="h-32 pt-10 md:pt-0 md:h-24 border-b border-white/5 px-4 md:px-12 flex items-center justify-between bg-black shrink-0 relative z-[1600]">
         <div className="flex items-center gap-4 md:gap-8 flex-shrink-0 min-w-0">
