@@ -39,12 +39,10 @@ export default async function handler(req: any, res: any) {
     if (typeof output === 'string') {
       upscaledUrl = output;
     } else if (output && typeof (output as any).url === 'function') {
-      // FileOutput object - call .url() method
       upscaledUrl = (output as any).url();
     } else if (output && (output as any).url) {
       upscaledUrl = (output as any).url;
     } else if (output) {
-      // Try toString which FileOutput supports
       upscaledUrl = String(output);
       if (upscaledUrl === '[object Object]') {
         throw new Error('Could not extract URL from Replicate output');
@@ -81,7 +79,6 @@ export default async function handler(req: any, res: any) {
 
         if (uploadError) {
           console.error('Supabase upload error:', uploadError);
-          // Return temp URL if permanent upload fails
           return res.status(200).json({ url: upscaledUrl, permanent: false });
         }
 
@@ -91,7 +88,6 @@ export default async function handler(req: any, res: any) {
         return res.status(200).json({ url: urlData.publicUrl, permanent: true });
       } catch (uploadErr: any) {
         console.error('Upload process failed:', uploadErr.message);
-        // Return temp URL as fallback
         return res.status(200).json({ url: upscaledUrl, permanent: false });
       }
     }
