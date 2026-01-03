@@ -1257,16 +1257,26 @@ const EditorView = ({ project, userTier, user, onBack, onUpdateProject, onUpgrad
                     )}
                     <div className="absolute top-4 right-4 hidden md:flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button 
-                        onClick={() => {
+                        onClick={async () => {
                           const imageToDownload = hdVersions[renderIdx] || activeImage;
                           const ext = hdVersions[renderIdx] ? 'png' : 'jpg';
                           const suffix = hdVersions[renderIdx] ? '-4K' : '';
-                          const link = document.createElement('a');
-                          link.href = imageToDownload;
-                          link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}${suffix}-${Date.now()}.${ext}`;
-                          document.body.appendChild(link);
-                          link.click();
-                          document.body.removeChild(link);
+                          const filename = `${project.name.toLowerCase().replace(/\s+/g, '-')}${suffix}-${Date.now()}.${ext}`;
+                          try {
+                            const response = await fetch(imageToDownload);
+                            const blob = await response.blob();
+                            const blobUrl = URL.createObjectURL(blob);
+                            const link = document.createElement('a');
+                            link.href = blobUrl;
+                            link.download = filename;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            URL.revokeObjectURL(blobUrl);
+                          } catch (err) {
+                            console.error('Download failed:', err);
+                            window.open(imageToDownload, '_blank');
+                          }
                         }}
                         className="w-12 h-12 bg-black/80 backdrop-blur rounded-full flex items-center justify-center text-white hover:bg-white hover:text-black transition-all"
                         title={hdVersions[renderIdx] ? "Download 4K" : "Download Image"}
