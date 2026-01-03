@@ -1199,10 +1199,14 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                             setIsUpscaling(true);
                             try {
                               const hdUrl = await upscaleVideo(activeVideo);
+                              const response = await fetch(hdUrl);
+                              const blob = await response.blob();
+                              const blobUrl = URL.createObjectURL(blob);
                               const link = document.createElement('a');
-                              link.href = hdUrl;
+                              link.href = blobUrl;
                               link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}-4K-video-${Date.now()}.mp4`;
                               link.click();
+                              URL.revokeObjectURL(blobUrl);
                               onUpdateProject(project, 5);
                             } catch (err: any) {
                               alert(err.message || '4K video export failed');
@@ -1325,11 +1329,15 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                               setHdVersions(newHdVersions);
                               onUpdateProject({ ...project, hdVersions: newHdVersions }, 2);
                               
-                              // Download the HD image
+                              // Download the HD image - fetch as blob for cross-origin
+                              const response = await fetch(hdUrl);
+                              const blob = await response.blob();
+                              const blobUrl = URL.createObjectURL(blob);
                               const link = document.createElement('a');
-                              link.href = hdUrl;
+                              link.href = blobUrl;
                               link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}-4K-${Date.now()}.png`;
                               link.click();
+                              URL.revokeObjectURL(blobUrl);
                             } catch (err: any) {
                               alert(err.message || 'HD export failed');
                             } finally {
@@ -1556,10 +1564,14 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                 <button
                   onClick={async () => {
                     if (hdVersions[renderIdx]) {
+                      const response = await fetch(hdVersions[renderIdx]);
+                      const blob = await response.blob();
+                      const blobUrl = URL.createObjectURL(blob);
                       const link = document.createElement('a');
-                      link.href = hdVersions[renderIdx];
+                      link.href = blobUrl;
                       link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}-4K-${Date.now()}.png`;
                       link.click();
+                      URL.revokeObjectURL(blobUrl);
                       return;
                     }
                     
@@ -1578,10 +1590,14 @@ const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onT
                       setHdVersions(newHdVersions);
                       onUpdateProject({ ...project, hdVersions: newHdVersions }, 2);
                       
+                      const response = await fetch(hdUrl);
+                      const blob = await response.blob();
+                      const blobUrl = URL.createObjectURL(blob);
                       const link = document.createElement('a');
-                      link.href = hdUrl;
+                      link.href = blobUrl;
                       link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}-4K-${Date.now()}.png`;
                       link.click();
+                      URL.revokeObjectURL(blobUrl);
                     } catch (err: any) {
                       alert(err.message || 'HD export failed');
                     } finally {

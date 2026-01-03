@@ -1,5 +1,7 @@
+import Replicate from 'replicate';
+
 export const config = {
-  maxDuration: 120,
+  maxDuration: 300, // 5 minutes for video processing
 };
 
 export default async function handler(req: any, res: any) {
@@ -14,41 +16,23 @@ export default async function handler(req: any, res: any) {
       return res.status(400).json({ message: 'Video URL is required' });
     }
 
-    // Using Runway ML upscale API
-    const response = await fetch('https://api.replicate.com/v1/predictions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Token ${process.env.REPLICATE_API_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        version: "1864a5756e3bfeb4c1db6aaf91dd3ec5e82553f460b23ae8f326d9de4298c537",
-        input: {
-          video_path: video,
-          scale: 4
-        }
-      })
+    const replicate = new Replicate({
+      auth: process.env.REPLICATE_API_TOKEN,
     });
 
-    const prediction = await response.json();
-    
-    // Poll for completion
-    let result = prediction;
-    while (result.status !== 'succeeded' && result.status !== 'failed') {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      const pollResponse = await fetch(`https://api.replicate.com/v1/predictions/${result.id}`, {
-        headers: {
-          'Authorization': `Token ${process.env.REPLICATE_API_TOKEN}`,
+    // Use video-realesrgan for video upscaling
+    const output = await replicate.run(
+      "lucataco/video-realesrgan:c356448e476c0fac51e554149be279cc5eb7fc13dd9a26e78adabf6a8f8f06fc",
+      {
+        input: {
+          video_path: video,
+          scale: 4,
+          face_enhance: false
         }
-      });
-      result = await pollResponse.json();
-    }
+      }
+    );
 
-    if (result.status === 'failed') {
-      throw new Error('Video upscale failed');
-    }
-
-    return res.status(200).json({ url: result.output });
+    return res.status(200).json({ url: output });
   } catch (error: any) {
     console.error('Video upscale error:', error);
     return res.status(500).json({ message: error.message || 'Video upscale failed' });
