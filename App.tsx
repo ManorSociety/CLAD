@@ -1620,11 +1620,30 @@ const EditorView = ({ project, userTier, user, onBack, onUpdateProject, onUpgrad
                     setIsUpscaling(true);
                     try {
                       const hdUrl = await upscaleImage(activeImage);
-                      const newHdVersions = { ...hdVersions, [renderIdx]: hdUrl };
+                      
+                      // Upload to Supabase storage
+                      const byteString = atob(hdUrl.split(',')[1]);
+                      const mimeType = hdUrl.split(',')[0].split(':')[1].split(';')[0];
+                      const ab = new ArrayBuffer(byteString.length);
+                      const ia = new Uint8Array(ab);
+                      for (let i = 0; i < byteString.length; i++) {
+                        ia[i] = byteString.charCodeAt(i);
+                      }
+                      const blob = new Blob([ab], { type: mimeType });
+                      const fileName = `${project.id}-4k-${renderIdx}-${Date.now()}.png`;
+                      const { error: uploadError } = await supabase.storage
+                        .from('renders')
+                        .upload(fileName, blob, { contentType: 'image/png', upsert: true });
+                      
+                      if (uploadError) throw new Error('Failed to save 4K');
+                      
+                      const { data: urlData } = supabase.storage.from('renders').getPublicUrl(fileName);
+                      const hdStorageUrl = urlData.publicUrl;
+                      
+                      const newHdVersions = { ...hdVersions, [renderIdx]: hdStorageUrl };
                       setHdVersions(newHdVersions);
                       onUpdateProject({ ...project, hdVersions: newHdVersions }, 2);
                       
-                      // Just save - user can download via regular download button
                       alert('4K version ready! Use the download button to save.');
                     } catch (err: any) {
                       alert(err.message || 'HD export failed');
