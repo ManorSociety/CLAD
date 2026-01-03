@@ -678,6 +678,7 @@ export default function App() {
         <EditorView 
           project={projects.find(p => p.id === currentProjectId)!} 
           userTier={usage.tier}
+          user={currentUser}
           onBack={() => setView(AppView.DASHBOARD)}
           onUpgrade={() => setView(AppView.MEMBERSHIP)}
           onTopUp={() => setShowTopUp(true)}
@@ -897,7 +898,7 @@ const SignupStep = ({ tier, onComplete, onBack }: any) => {
     );
 };
 
-const EditorView = ({ project, userTier, onBack, onUpdateProject, onUpgrade, onTopUp, onReAuthorize, creditsAvailable, setShowCompare, setCompareState, setShowShare, setShowSpecSheet }: any) => {
+const EditorView = ({ project, userTier, user, onBack, onUpdateProject, onUpgrade, onTopUp, onReAuthorize, creditsAvailable, setShowCompare, setCompareState, setShowShare, setShowSpecSheet }: any) => {
   const [style, setStyle] = useState(DESIGN_STYLES.find(s => s.id === project.activeStyleId) || DESIGN_STYLES[0]);
   const [env, setEnv] = useState(project.environment || EnvironmentMode.EXISTING);
   const [light, setLight] = useState(project.lighting || LightingMode.GOLDEN);
