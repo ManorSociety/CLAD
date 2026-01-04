@@ -1457,20 +1457,21 @@ const EditorView = ({ project, userTier, user, onBack, onUpdateProject, onUpgrad
                   const is4K = !!hdVideoVersions[vidIdx];
                   const suffix = is4K ? '-4K' : '';
                   const filename = `${project.name.toLowerCase().replace(/\s+/g, '-')}${suffix}-video.mp4`;
-                  if (navigator.share) {
-                    try {
-                      const response = await fetch(videoToDownload);
-                      const blob = await response.blob();
-                      const file = new File([blob], filename, { type: 'video/mp4' });
+                  
+                  try {
+                    const response = await fetch(videoToDownload);
+                    const blob = await response.blob();
+                    const file = new File([blob], filename, { type: 'video/mp4' });
+                    
+                    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
                       await navigator.share({ files: [file], title: 'CLAD Video' });
-                    } catch (err) {
-                      window.open(videoToDownload, '_blank');
+                    } else {
+                      alert('Use the Share button to save video to camera roll');
                     }
-                  } else {
-                    const link = document.createElement('a');
-                    link.href = videoToDownload;
-                    link.download = filename;
-                    link.click();
+                  } catch (err: any) {
+                    if (err.name !== 'AbortError') {
+                      alert('Download failed. Try the Share button instead.');
+                    }
                   }
                 }}
                 className="w-11 h-11 bg-zinc-900 border border-white/10 rounded-full flex items-center justify-center text-white active:bg-amber-500 transition-all"
@@ -1483,21 +1484,31 @@ const EditorView = ({ project, userTier, user, onBack, onUpdateProject, onUpgrad
                 onClick={async () => {
                   const vidIdx = project.generatedVideos.indexOf(activeVideo);
                   const videoToShare = hdVideoVersions[vidIdx] || activeVideo;
-                  if (navigator.share) {
-                    try {
-                      const response = await fetch(videoToShare);
-                      const blob = await response.blob();
-                      const file = new File([blob], `${project.name.toLowerCase().replace(/\s+/g, "-")}-video.mp4`, { type: "video/mp4" });
-                      await navigator.share({ files: [file], title: "CLAD Video" });
-                    } catch (err) { console.log("Share cancelled"); }
-                  } else { setShowShare(true); }
+                  const is4K = !!hdVideoVersions[vidIdx];
+                  const suffix = is4K ? '-4K' : '';
+                  const filename = `${project.name.toLowerCase().replace(/\s+/g, '-')}${suffix}-video.mp4`;
+                  
+                  try {
+                    const response = await fetch(videoToShare);
+                    const blob = await response.blob();
+                    const file = new File([blob], filename, { type: 'video/mp4' });
+                    
+                    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                      await navigator.share({ files: [file], title: 'CLAD Video' });
+                    } else {
+                      setShowShare(true);
+                    }
+                  } catch (err: any) {
+                    if (err.name !== 'AbortError') {
+                      setShowShare(true);
+                    }
+                  }
                 }}
                 className="w-11 h-11 bg-zinc-900 border border-white/10 rounded-full flex items-center justify-center text-white active:bg-amber-500 transition-all"
                 title="Share Video"
               >
                 <i className="fa-solid fa-share-nodes text-sm"></i>
               </button>
-              {/* 4K Video - Desktop only for now */}
             </div>
           )}
           
