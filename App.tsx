@@ -962,7 +962,26 @@ const EditorView = ({ project, userTier, user, onBack, onUpdateProject, onUpgrad
     const currentImg = renderIdx >= 0 ? project.generatedRenderings[renderIdx] : project.imageUrl;
     setIsCinematic(true);
     try {
-      const videoUrl = await generateCinematicVideo(currentImg, style.dna + " " + magicPencil, aspectRatio);
+      const videoBase64 = await generateCinematicVideo(currentImg, style.dna + " " + magicPencil, aspectRatio);
+      
+      // Upload to Supabase to get URL
+      let videoUrl = videoBase64;
+      if (videoBase64.startsWith('data:')) {
+        try {
+          const base64Data = videoBase64.split(',')[1];
+          const byteChars = atob(base64Data);
+          const byteNums = new Array(byteChars.length);
+          for (let i = 0; i < byteChars.length; i++) byteNums[i] = byteChars.charCodeAt(i);
+          const blob = new Blob([new Uint8Array(byteNums)], { type: 'video/mp4' });
+          const fileName = `${user?.id || 'anon'}/${project.id}/video-${Date.now()}.mp4`;
+          const { error } = await supabase.storage.from('renders').upload(fileName, blob, { contentType: 'video/mp4' });
+          if (!error) {
+            const { data } = supabase.storage.from('renders').getPublicUrl(fileName);
+            videoUrl = data.publicUrl;
+          }
+        } catch (e) { console.log('Video upload failed, using base64'); }
+      }
+      
       const newVideos = [...(project.generatedVideos || []), videoUrl];
       onUpdateProject({ ...project, generatedVideos: newVideos, customDirectives: magicPencil }, 5);
       setVideoIdx(newVideos.length - 1);
