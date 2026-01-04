@@ -1,23 +1,6 @@
 import { supabase } from './supabaseClient';
 import { Project } from '../types';
 
-const urlToBase64 = async (url: string): Promise<string> => {
-  try {
-    if (url.startsWith('data:')) return url;
-    const response = await fetch(url);
-    const blob = await response.blob();
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  } catch (error) {
-    console.error('Failed to convert URL to base64:', error);
-    return url;
-  }
-};
-
 export const uploadImage = async (base64Image: string, userId: string, projectId: string, type: 'original' | 'render' | 'video', index?: number): Promise<string> => {
   const base64Data = base64Image.split(',')[1] || base64Image;
   const mimeMatch = base64Image.match(/data:([^;]+);/);
@@ -41,18 +24,14 @@ export const saveProject = async (project: Project, userId: string): Promise<voi
       imageUrl = await uploadImage(project.imageUrl, userId, project.id, 'original');
     }
     const renderingUrls: string[] = [];
-    const rendersJsonb: any[] = [];
     for (let i = 0; i < (project.generatedRenderings?.length || 0); i++) {
       const render = project.generatedRenderings[i];
       if (!render) continue;
-      let url = render;
-      let base64 = render;
       if (render.startsWith('data:')) {
-        url = await uploadImage(render, userId, project.id, 'render', i);
-        base64 = render;
+        renderingUrls.push(await uploadImage(render, userId, project.id, 'render', i));
+      } else {
+        renderingUrls.push(render);
       }
-      renderingUrls.push(url);
-      rendersJsonb.push({ url, base64, styleId: project.activeStyleId, timestamp: Date.now() });
     }
     const videos: string[] = [];
     for (let i = 0; i < (project.generatedVideos?.length || 0); i++) {
@@ -65,7 +44,7 @@ export const saveProject = async (project: Project, userId: string): Promise<voi
     }
     await supabase.from('projects').upsert({
       id: project.id, user_id: userId, name: project.name, image_url: imageUrl, cover_image: imageUrl,
-      renderings: renderingUrls, renders: rendersJsonb, videos: videos, style_id: project.activeStyleId || null,
+      renderings: renderingUrls, videos: videos, style_id: project.activeStyleId || null,
       lighting: project.lighting || null, environment: project.environment || null, camera_angle: project.cameraAngle || null,
       render_mode: project.renderMode || 'EXTERIOR', room_type: project.roomType || null,
       custom_directives: project.customDirectives || null,
@@ -79,32 +58,26 @@ export const saveProject = async (project: Project, userId: string): Promise<voi
 export const loadProjects = async (userId: string): Promise<Project[]> => {
   const { data, error } = await supabase.from('projects').select('*').eq('user_id', userId).order('updated_at', { ascending: false });
   if (error) return [];
-  const projects: Project[] = [];
-  for (const p of (data || [])) {
-    let generatedRenderings: string[] = [];
-    if (p.renders && Array.isArray(p.renders) && p.renders.length > 0) {
-      generatedRenderings = await Promise.all(p.renders.map(async (r: any) => {
-        if (r.base64 && r.base64.startsWith('data:')) return r.base64;
-        if (r.url) return await urlToBase64(r.url);
-        return r;
-      }));
-    } else if (p.renderings && Array.isArray(p.renderings)) {
-      generatedRenderings = await Promise.all(p.renderings.map(async (url: string) => {
-        if (url.startsWith('data:')) return url;
-        return await urlToBase64(url);
-      }));
-    }
-    let imageUrl = p.image_url;
-    if (imageUrl && !imageUrl.startsWith('data:')) imageUrl = await urlToBase64(imageUrl);
-    projects.push({
-      id: p.id, name: p.name || 'Untitled Project', imageUrl, generatedRenderings,
-      generatedVideos: p.videos || [], activeStyleId: p.style_id, lighting: p.lighting,
-      environment: p.environment, cameraAngle: p.camera_angle, renderMode: p.render_mode || 'EXTERIOR',
-      roomType: p.room_type, customDirectives: p.custom_directives, createdAt: p.created_at, updatedAt: p.updated_at,
-      hdVersions: p.hd_versions || {}, hdVideoVersions: p.hd_video_versions || {}
-    });
-  }
-  return projects;
+  
+  // Just map directly - NO base64 conversion!
+  return (data || []).map(p => ({
+    id: p.id,
+    name: p.name || 'Untitled Project',
+    imageUrl: p.image_url || p.cover_image,
+    generatedRenderings: p.renderings || [],
+    generatedVideos: p.videos || [],
+    activeStyleId: p.style_id,
+    lighting: p.lighting,
+    environment: p.environment,
+    cameraAngle: p.camera_angle,
+    renderMode: p.render_mode || 'EXTERIOR',
+    roomType: p.room_type,
+    customDirectives: p.custom_directives,
+    createdAt: p.created_at,
+    updatedAt: p.updated_at,
+    hdVersions: p.hd_versions || {},
+    hdVideoVersions: p.hd_video_versions || {}
+  }));
 };
 
 export const deleteProject = async (projectId: string): Promise<void> => {
