@@ -959,9 +959,19 @@ const EditorView = ({ project, userTier, user, onBack, onUpdateProject, onUpgrad
     let wakeLock: any = null;
     try { wakeLock = await navigator.wakeLock?.request("screen"); } catch (e) { console.log("Wake lock not supported"); }
     if (creditsAvailable < 5) { onTopUp(); return; }
-    const currentImg = renderIdx >= 0 ? project.generatedRenderings[renderIdx] : project.imageUrl;
+    let currentImg = renderIdx >= 0 ? project.generatedRenderings[renderIdx] : project.imageUrl;
     setIsCinematic(true);
     try {
+      // Convert URL to base64 if needed (VEO requires base64)
+      if (currentImg && !currentImg.startsWith('data:')) {
+        const response = await fetch(currentImg);
+        const blob = await response.blob();
+        currentImg = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
+        });
+      }
       const videoBase64 = await generateCinematicVideo(currentImg, style.dna + " " + magicPencil, aspectRatio);
       
       // Upload to Supabase to get URL
