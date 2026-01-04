@@ -59,7 +59,6 @@ export const loadProjects = async (userId: string): Promise<Project[]> => {
   const { data, error } = await supabase.from('projects').select('*').eq('user_id', userId).order('updated_at', { ascending: false });
   if (error) return [];
   
-  // Just map directly - NO base64 conversion!
   return (data || []).map(p => ({
     id: p.id,
     name: p.name || 'Untitled Project',
