@@ -17,7 +17,7 @@ import { SpecSheetModal } from './components/SpecSheetModal';
 import { ShareModal } from './components/ShareModal';
 import { BuilderDashboard } from './components/BuilderDashboard';
 import { generateProjectPDF } from './services/pdfService';
-import { upscaleImage, upscaleVideo } from './services/upscaleService';
+import { upscaleImage } from './services/upscaleService';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { PricingSection } from './components/PricingSection';
 
