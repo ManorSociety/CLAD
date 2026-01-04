@@ -20,6 +20,17 @@ const getAIClient = () => {
   return new GoogleGenAI({ apiKey: key });
 };
 
+const urlToBase64 = async (url: string): Promise<string> => {
+  if (!url || url.startsWith('data:')) return url;
+  const response = await fetch(url);
+  const blob = await response.blob();
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.readAsDataURL(blob);
+  });
+};
+
 const parseBase64 = (base64String: string) => {
   if (!base64String) return { mimeType: "image/jpeg", data: "" };
   if (base64String.includes(",")) {
@@ -85,7 +96,8 @@ export const generateExteriorVision = async (
   customColors?: SavedColor[]
 ): Promise<string> => {
   const ai = getAIClient();
-  const { mimeType: oMime, data: oData } = parseBase64(project.imageUrl);
+  const imageData = await urlToBase64(project.imageUrl);
+  const { mimeType: oMime, data: oData } = parseBase64(imageData);
   const parts: any[] = [{ inlineData: { mimeType: oMime, data: oData } }];
 
   if (project.referenceImages && project.referenceImages.length > 0) {
