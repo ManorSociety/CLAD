@@ -213,7 +213,8 @@ export const generateInteriorVision = async (
   materials?: { flooring?: string; cabinets?: string; countertops?: string; backsplash?: string }
 ): Promise<string> => {
   const ai = getAIClient();
-  const { mimeType: oMime, data: oData } = parseBase64(project.imageUrl);
+  const imageData216 = await urlToBase64(project.imageUrl);
+  const { mimeType: oMime, data: oData } = parseBase64(imageData216);
 
   // Normalize roomType safely
   const roomTypeStr = typeof roomType === "string" ? roomType : (RoomType as any)[roomType] ?? String(roomType);
