@@ -1452,19 +1452,24 @@ const EditorView = ({ project, userTier, user, onBack, onUpdateProject, onUpgrad
             <div className="md:hidden w-full py-4 px-6 bg-black border-t border-white/5 flex justify-center gap-4">
               <button 
                 onClick={async () => {
+                  const vidIdx = project.generatedVideos.indexOf(activeVideo);
+                  const videoToDownload = hdVideoVersions[vidIdx] || activeVideo;
+                  const is4K = !!hdVideoVersions[vidIdx];
+                  const suffix = is4K ? '-4K' : '';
+                  const filename = `${project.name.toLowerCase().replace(/\s+/g, '-')}${suffix}-video.mp4`;
                   if (navigator.share) {
                     try {
-                      const response = await fetch(activeVideo);
+                      const response = await fetch(videoToDownload);
                       const blob = await response.blob();
-                      const file = new File([blob], `${project.name.toLowerCase().replace(/\s+/g, '-')}-video.mp4`, { type: 'video/mp4' });
+                      const file = new File([blob], filename, { type: 'video/mp4' });
                       await navigator.share({ files: [file], title: 'CLAD Video' });
                     } catch (err) {
-                      window.open(activeVideo, '_blank');
+                      window.open(videoToDownload, '_blank');
                     }
                   } else {
                     const link = document.createElement('a');
-                    link.href = activeVideo;
-                    link.download = `${project.name.toLowerCase().replace(/\s+/g, '-')}-video.mp4`;
+                    link.href = videoToDownload;
+                    link.download = filename;
                     link.click();
                   }
                 }}
@@ -1476,9 +1481,11 @@ const EditorView = ({ project, userTier, user, onBack, onUpdateProject, onUpgrad
               
               <button 
                 onClick={async () => {
+                  const vidIdx = project.generatedVideos.indexOf(activeVideo);
+                  const videoToShare = hdVideoVersions[vidIdx] || activeVideo;
                   if (navigator.share) {
                     try {
-                      const response = await fetch(activeVideo);
+                      const response = await fetch(videoToShare);
                       const blob = await response.blob();
                       const file = new File([blob], `${project.name.toLowerCase().replace(/\s+/g, "-")}-video.mp4`, { type: "video/mp4" });
                       await navigator.share({ files: [file], title: "CLAD Video" });
