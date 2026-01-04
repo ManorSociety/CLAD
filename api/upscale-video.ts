@@ -25,7 +25,7 @@ export default async function handler(req: any, res: any) {
 
     let sourceUrl = videoUrl;
 
-    // If base64, upload to Supabase first to get URL
+    // If base64, upload to Supabase first
     if (videoUrl.startsWith('data:video')) {
       const base64Data = videoUrl.split(',')[1];
       const buffer = Buffer.from(base64Data, 'base64');
@@ -36,7 +36,6 @@ export default async function handler(req: any, res: any) {
         .upload(tempFileName, buffer, { contentType: 'video/mp4', upsert: true });
       
       if (error) {
-        console.error('Failed to upload temp video:', error);
         return res.status(500).json({ message: 'Failed to process video' });
       }
       
@@ -67,12 +66,11 @@ export default async function handler(req: any, res: any) {
         return res.status(200).json({ url: data.publicUrl, permanent: true });
       }
     } catch (e) {
-      console.log('Supabase save failed, returning Replicate URL');
+      console.log('Returning Replicate URL');
     }
 
     return res.status(200).json({ url: upscaledUrl, permanent: false });
   } catch (error: any) {
-    console.error('Video upscale error:', error);
     return res.status(500).json({ message: error.message || 'Video upscale failed' });
   }
 }

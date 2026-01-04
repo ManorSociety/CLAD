@@ -15,7 +15,6 @@ export const upscaleImage = async (imageUrl: string, projectId?: string, userId?
 };
 
 export const upscaleVideo = async (videoUrl: string, projectId?: string, userId?: string): Promise<string> => {
-  // Send directly to upscale API - it handles base64 or URL
   const response = await fetch('/api/upscale-video', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
