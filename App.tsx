@@ -962,7 +962,22 @@ const EditorView = ({ project, userTier, user, onBack, onUpdateProject, onUpgrad
     const currentImg = renderIdx >= 0 ? project.generatedRenderings[renderIdx] : project.imageUrl;
     setIsCinematic(true);
     try {
-      const videoUrl = await generateCinematicVideo(currentImg, style.dna + " " + magicPencil, aspectRatio);
+      const videoBase64 = await generateCinematicVideo(currentImg, style.dna + " " + magicPencil, aspectRatio);
+      
+      // Upload to Supabase to get permanent URL (faster than storing base64)
+      let videoUrl = videoBase64;
+      try {
+        const uploadRes = await fetch('/api/upload-video', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ videoBase64, projectId: project.id, userId: user?.id })
+        });
+        if (uploadRes.ok) {
+          const data = await uploadRes.json();
+          videoUrl = data.url;
+        }
+      } catch (e) { console.log('Video upload failed, using base64'); }
+      
       const newVideos = [...(project.generatedVideos || []), videoUrl];
       onUpdateProject({ ...project, generatedVideos: newVideos, customDirectives: magicPencil }, 5);
       setVideoIdx(newVideos.length - 1);

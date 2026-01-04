@@ -17,6 +17,11 @@ export default async function handler(req: any, res: any) {
 
   try {
     const { videoBase64, projectId, userId } = req.body;
+    
+    if (!videoBase64) {
+      return res.status(400).json({ message: 'Video data required' });
+    }
+
     const base64Data = videoBase64.includes(',') ? videoBase64.split(',')[1] : videoBase64;
     const buffer = Buffer.from(base64Data, 'base64');
     const fileName = `${userId || 'anon'}/${projectId}/video-${Date.now()}.mp4`;
@@ -30,6 +35,7 @@ export default async function handler(req: any, res: any) {
     const { data } = supabase.storage.from('renders').getPublicUrl(fileName);
     return res.status(200).json({ url: data.publicUrl });
   } catch (error: any) {
+    console.error('Upload error:', error);
     return res.status(500).json({ message: error.message });
   }
 }
